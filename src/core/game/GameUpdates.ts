@@ -1,5 +1,6 @@
 import { AllPlayersStats, ClientID, Winner } from "../Schemas";
 import {
+  AirPolicy,
   EmojiMessage,
   GameUpdates,
   Gold,
@@ -184,6 +185,7 @@ export interface PlayerUpdate {
   incomingAttacks: AttackUpdate[];
   outgoingAllianceRequests: PlayerID[];
   alliances: AllianceView[];
+  airPolicy?: AirPolicy;
   hasSpawned: boolean;
   betrayals: number;
   lastDeleteUnitTick: Tick;

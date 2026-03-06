@@ -51,7 +51,8 @@ export type Intent =
   | DeleteUnitIntent
   | KickPlayerIntent
   | TogglePauseIntent
-  | UpdateGameConfigIntent;
+  | UpdateGameConfigIntent
+  | SetAirPolicyIntent;
 
 export type AttackIntent = z.infer<typeof AttackIntentSchema>;
 export type CancelAttackIntent = z.infer<typeof CancelAttackIntentSchema>;
@@ -85,6 +86,7 @@ export type TogglePauseIntent = z.infer<typeof TogglePauseIntentSchema>;
 export type UpdateGameConfigIntent = z.infer<
   typeof UpdateGameConfigIntentSchema
 >;
+export type SetAirPolicyIntent = z.infer<typeof SetAirPolicyIntentSchema>;
 
 export type Turn = z.infer<typeof TurnSchema>;
 export type GameConfig = z.infer<typeof GameConfigSchema>;
@@ -427,6 +429,29 @@ export const UpdateGameConfigIntentSchema = z.object({
   config: GameConfigSchema.partial(),
 });
 
+export const SetAirPolicyIntentSchema = z.object({
+  type: z.literal("set_air_policy"),
+  tradePermissions: z.object({
+    friends: z.boolean(),
+    normal: z.boolean(),
+    enemies: z.boolean(),
+  }),
+  interceptPermissions: z.object({
+    friends: z.boolean(),
+    normal: z.boolean(),
+    enemies: z.boolean(),
+  }),
+  interceptNationSmallIds: z.number().int().array().optional(),
+  interceptAreas: z
+    .object({
+      north: z.boolean(),
+      south: z.boolean(),
+      west: z.boolean(),
+      east: z.boolean(),
+    })
+    .optional(),
+});
+
 const IntentSchema = z.discriminatedUnion("type", [
   AttackIntentSchema,
   CancelAttackIntentSchema,
@@ -452,6 +477,7 @@ const IntentSchema = z.discriminatedUnion("type", [
   KickPlayerIntentSchema,
   TogglePauseIntentSchema,
   UpdateGameConfigIntentSchema,
+  SetAirPolicyIntentSchema,
 ]);
 
 // StampedIntent = Intent with server-stamped clientID (used in turns and execution)

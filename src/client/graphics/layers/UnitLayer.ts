@@ -1,7 +1,12 @@
 import { colord, Colord } from "colord";
 import { EventBus } from "../../../core/EventBus";
 import { Theme } from "../../../core/configuration/Config";
-import { Submarines, UnitType } from "../../../core/game/Game";
+import {
+  CommandablePatrolUnits,
+  NavalUnits,
+  Submarines,
+  UnitType,
+} from "../../../core/game/Game";
 import { TileRef } from "../../../core/game/GameMap";
 import { GameView, UnitView } from "../../../core/game/GameView";
 import { BezenhamLine } from "../../../core/utilities/Line";
@@ -48,8 +53,8 @@ export class UnitLayer implements Layer {
   // Selected unit property as suggested in the review comment
   private selectedUnit: UnitView | null = null;
 
-  // Configuration for naval unit selection
-  private readonly NAVAL_SELECTION_RADIUS = 10;
+  // Configuration for player-commandable patrol unit selection
+  private readonly PATROL_SELECTION_RADIUS = 10;
   // Enemy submarines are only visible when one of your submarines is nearby.
   private readonly SUBMARINE_DETECTION_RANGE = 40;
 
@@ -102,17 +107,15 @@ export class UnitLayer implements Layer {
    * @param clickRef The tile to check
    * @returns Array of player's naval units in range, sorted by distance (closest first)
    */
-  private findNavalUnitsNearCell(clickRef: TileRef): UnitView[] {
-    // Only select naval units owned by the player.
-    const navalTypes = [UnitType.Warship, ...Submarines.types] as const;
+  private findPatrolUnitsNearCell(clickRef: TileRef): UnitView[] {
     return this.game
-      .units(...navalTypes)
+      .units(...CommandablePatrolUnits.types)
       .filter(
         (unit) =>
           unit.isActive() &&
-          unit.owner() === this.game.myPlayer() && // Only allow selecting own warships
+          unit.owner() === this.game.myPlayer() && // Only allow selecting own commandable units
           this.game.manhattanDist(unit.tile(), clickRef) <=
-            this.NAVAL_SELECTION_RADIUS,
+            this.PATROL_SELECTION_RADIUS,
       )
       .sort((a, b) => {
         // Sort by distance (closest first)
@@ -137,9 +140,14 @@ export class UnitLayer implements Layer {
 
       clickRef = this.game.ref(cell.x, cell.y);
     }
-    if (!this.game.isOcean(clickRef)) return;
 
     if (this.selectedUnit) {
+      if (
+        NavalUnits.has(this.selectedUnit.type()) &&
+        !this.game.isOcean(clickRef)
+      ) {
+        return;
+      }
       this.eventBus.emit(
         new MoveWarshipIntentEvent(this.selectedUnit.id(), clickRef),
       );
@@ -148,8 +156,8 @@ export class UnitLayer implements Layer {
       return;
     }
 
-    // Find naval units near this tile, sorted by distance.
-    nearbyNavalUnits ??= this.findNavalUnitsNearCell(clickRef);
+    // Find commandable units near this tile, sorted by distance.
+    nearbyNavalUnits ??= this.findPatrolUnitsNearCell(clickRef);
     if (nearbyNavalUnits.length > 0) {
       this.eventBus.emit(new UnitSelectionEvent(nearbyNavalUnits[0], true));
     }
@@ -166,13 +174,6 @@ export class UnitLayer implements Layer {
     }
 
     const clickRef = this.game.ref(cell.x, cell.y);
-    if (!this.game.isOcean(clickRef)) {
-      // No isValidCoord/Ref check yet, that is done for ContextMenuEvent later
-      // No warship to find because no Ocean tile, open Radial Menu
-      this.eventBus.emit(new ContextMenuEvent(event.x, event.y));
-      return;
-    }
-
     if (!this.game.isValidRef(clickRef)) {
       return;
     }
@@ -183,7 +184,7 @@ export class UnitLayer implements Layer {
       return;
     }
 
-    const nearbyNavalUnits = this.findNavalUnitsNearCell(clickRef);
+    const nearbyNavalUnits = this.findPatrolUnitsNearCell(clickRef);
 
     if (nearbyNavalUnits.length > 0) {
       this.onMouseUp(
@@ -192,7 +193,7 @@ export class UnitLayer implements Layer {
         nearbyNavalUnits,
       );
     } else {
-      // No warships selected or nearby, open Radial Menu
+      // No commandable units selected or nearby, open Radial Menu
       this.eventBus.emit(new ContextMenuEvent(event.x, event.y));
     }
   }
@@ -379,6 +380,9 @@ export class UnitLayer implements Layer {
       case UnitType.Warship:
       case UnitType.Submarine:
       case UnitType.NuclearSubmarine:
+      case UnitType.Interceptor:
+      case UnitType.MultiFighter:
+      case UnitType.Bomber:
         this.handleNavalUnitEvent(unit);
         break;
       case UnitType.Shell:

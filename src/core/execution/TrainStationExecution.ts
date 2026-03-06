@@ -53,7 +53,10 @@ export class TrainStationExecution implements Execution {
   private shouldSpawnTrain(): boolean {
     const spawnRate = this.mg
       .config()
-      .trainSpawnRate(this.unit.owner().unitCount(UnitType.Factory));
+      .trainSpawnRate(
+        this.unit.owner().unitCount(UnitType.Factory) +
+          this.unit.owner().unitCount(UnitType.Airport),
+      );
     for (let i = 0; i < this.unit!.level(); i++) {
       if (this.random.chance(spawnRate)) {
         return true;

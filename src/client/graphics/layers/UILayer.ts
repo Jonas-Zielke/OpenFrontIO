@@ -53,7 +53,10 @@ export class UILayer implements Layer {
       unit !== null &&
       (unit.type() === UnitType.Warship ||
         unit.type() === UnitType.Submarine ||
-        unit.type() === UnitType.NuclearSubmarine)
+        unit.type() === UnitType.NuclearSubmarine ||
+        unit.type() === UnitType.Interceptor ||
+        unit.type() === UnitType.MultiFighter ||
+        unit.type() === UnitType.Bomber)
     );
   }
 
@@ -121,10 +124,16 @@ export class UILayer implements Layer {
       case UnitType.Warship:
       case UnitType.Submarine:
       case UnitType.NuclearSubmarine:
+      case UnitType.CargoPlane:
+      case UnitType.Interceptor:
+      case UnitType.MultiFighter:
+      case UnitType.Bomber:
         this.drawHealthBar(unit);
         break;
       case UnitType.City:
       case UnitType.Factory:
+      case UnitType.Airport:
+      case UnitType.MilitaryAirport:
       case UnitType.DefensePost:
       case UnitType.Port:
       case UnitType.MissileSilo:
@@ -347,6 +356,8 @@ export class UILayer implements Layer {
           : this.deletionProgress(this.game, unit);
       case UnitType.City:
       case UnitType.Factory:
+      case UnitType.Airport:
+      case UnitType.MilitaryAirport:
       case UnitType.Port:
       case UnitType.DefensePost:
         return this.deletionProgress(this.game, unit);

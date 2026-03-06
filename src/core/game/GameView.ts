@@ -7,6 +7,7 @@ import { ClientID, GameID, Player, PlayerCosmetics } from "../Schemas";
 import { createRandomName } from "../Util";
 import { WorkerClient } from "../worker/WorkerClient";
 import {
+  AirPolicy,
   BuildableUnit,
   Cell,
   EmojiMessage,
@@ -566,6 +567,30 @@ export class PlayerView {
 
   hasEmbargo(other: PlayerView): boolean {
     return this.hasEmbargoAgainst(other) || other.hasEmbargoAgainst(this);
+  }
+
+  airPolicy(): AirPolicy {
+    return (
+      this.data.airPolicy ?? {
+        tradePermissions: {
+          friends: true,
+          normal: true,
+          enemies: false,
+        },
+        interceptPermissions: {
+          friends: false,
+          normal: false,
+          enemies: true,
+        },
+        interceptNationSmallIds: new Set<number>(),
+        interceptAreas: {
+          north: true,
+          south: true,
+          west: true,
+          east: true,
+        },
+      }
+    );
   }
 
   profile(): Promise<PlayerProfile> {

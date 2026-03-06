@@ -7,6 +7,7 @@ import { FrameProfiler } from "./FrameProfiler";
 import { TransformHandler } from "./TransformHandler";
 import { UIState } from "./UIState";
 import { AlertFrame } from "./layers/AlertFrame";
+import { AirManager } from "./layers/AirManager";
 import { AttacksDisplay } from "./layers/AttacksDisplay";
 import { BuildMenu } from "./layers/BuildMenu";
 import { ChatDisplay } from "./layers/ChatDisplay";
@@ -195,6 +196,13 @@ export function createRenderer(
   unitDisplay.eventBus = eventBus;
   unitDisplay.uiState = uiState;
 
+  const airManager = document.querySelector("air-manager") as AirManager;
+  if (!(airManager instanceof AirManager)) {
+    console.error("air manager not found");
+  }
+  airManager.game = game;
+  airManager.eventBus = eventBus;
+
   const playerPanel = document.querySelector("player-panel") as PlayerPanel;
   if (!(playerPanel instanceof PlayerPanel)) {
     console.error("player panel not found");
@@ -311,6 +319,7 @@ export function createRenderer(
     leaderboard,
     gameLeftSidebar,
     unitDisplay,
+    airManager,
     gameRightSidebar,
     controlPanel,
     playerInfo,

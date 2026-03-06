@@ -11,6 +11,8 @@ import {
 } from "../Util";
 import { AttackImpl } from "./AttackImpl";
 import {
+  AirPolicy,
+  AirRelationCategory,
   Alliance,
   AllianceInfo,
   AllianceRequest,
@@ -67,6 +69,28 @@ class Donation {
   ) {}
 }
 
+function defaultAirPolicy(): AirPolicy {
+  return {
+    tradePermissions: {
+      friends: true,
+      normal: true,
+      enemies: false,
+    },
+    interceptPermissions: {
+      friends: false,
+      normal: false,
+      enemies: true,
+    },
+    interceptNationSmallIds: new Set<number>(),
+    interceptAreas: {
+      north: true,
+      south: true,
+      west: true,
+      east: true,
+    },
+  };
+}
+
 export class PlayerImpl implements Player {
   public _lastTileChange: number = 0;
   public _pseudo_random: PseudoRandom;
@@ -107,6 +131,7 @@ export class PlayerImpl implements Player {
 
   private _spawnTile: TileRef | undefined;
   private _isDisconnected = false;
+  private _airPolicy: AirPolicy = defaultAirPolicy();
 
   constructor(
     private mg: GameImpl,
@@ -178,9 +203,15 @@ export class PlayerImpl implements Player {
             hasExtensionRequest:
               a.expiresAt() <=
               this.mg.ticks() +
-                this.mg.config().allianceExtensionPromptOffset(),
+              this.mg.config().allianceExtensionPromptOffset(),
           }) satisfies AllianceView,
       ),
+      airPolicy: {
+        tradePermissions: { ...this._airPolicy.tradePermissions },
+        interceptPermissions: { ...this._airPolicy.interceptPermissions },
+        interceptNationSmallIds: new Set(this._airPolicy.interceptNationSmallIds),
+        interceptAreas: { ...this._airPolicy.interceptAreas },
+      },
       hasSpawned: this.hasSpawned(),
       betrayals: this._betrayalCount,
       lastDeleteUnitTick: this.lastDeleteUnitTick,
@@ -830,10 +861,113 @@ export class PlayerImpl implements Player {
     return this.embargoes.has(other.id());
   }
 
+  private airRelationCategory(other: Player): AirRelationCategory {
+    if (this.isFriendly(other, true) || other.isFriendly(this, true)) {
+      return "friends";
+    }
+    if (
+      this.canAttackPlayer(other, true) ||
+      (other.isPlayer() && other.canAttackPlayer(this, true))
+    ) {
+      return "enemies";
+    }
+    return "normal";
+  }
+
+  airPolicy(): AirPolicy {
+    return {
+      tradePermissions: { ...this._airPolicy.tradePermissions },
+      interceptPermissions: { ...this._airPolicy.interceptPermissions },
+      interceptNationSmallIds: new Set(this._airPolicy.interceptNationSmallIds),
+      interceptAreas: { ...this._airPolicy.interceptAreas },
+    };
+  }
+
+  setAirPolicy(policy: Partial<AirPolicy>): void {
+    if (policy.tradePermissions !== undefined) {
+      this._airPolicy.tradePermissions = {
+        ...this._airPolicy.tradePermissions,
+        ...policy.tradePermissions,
+      };
+    }
+    if (policy.interceptPermissions !== undefined) {
+      this._airPolicy.interceptPermissions = {
+        ...this._airPolicy.interceptPermissions,
+        ...policy.interceptPermissions,
+      };
+    }
+    if (policy.interceptNationSmallIds !== undefined) {
+      this._airPolicy.interceptNationSmallIds = new Set(
+        Array.from(policy.interceptNationSmallIds).filter(
+          (smallID) => smallID !== this.smallID(),
+        ),
+      );
+    }
+    if (policy.interceptAreas !== undefined) {
+      this._airPolicy.interceptAreas = {
+        ...this._airPolicy.interceptAreas,
+        ...policy.interceptAreas,
+      };
+    }
+  }
+
   canTrade(other: Player): boolean {
     const embargo =
       other.hasEmbargoAgainst(this) || this.hasEmbargoAgainst(other);
     return !embargo && other.id() !== this.id();
+  }
+
+  canAirTradeWith(other: Player): boolean {
+    if (!this.canTrade(other)) {
+      return false;
+    }
+
+    const myCategory = this.airRelationCategory(other);
+    if (!this._airPolicy.tradePermissions[myCategory]) {
+      return false;
+    }
+
+    const otherCategory: AirRelationCategory =
+      other.isFriendly(this, true) || this.isFriendly(other, true)
+        ? "friends"
+        : other.canAttackPlayer(this, true) || this.canAttackPlayer(other, true)
+          ? "enemies"
+          : "normal";
+    return other.airPolicy().tradePermissions[otherCategory];
+  }
+
+  shouldInterceptAircraftFrom(other: Player, tile: TileRef): boolean {
+    if (other.id() === this.id()) {
+      return false;
+    }
+
+    const category = this.airRelationCategory(other);
+    if (!this._airPolicy.interceptPermissions[category]) {
+      return false;
+    }
+
+    if (
+      this._airPolicy.interceptNationSmallIds.size > 0 &&
+      !this._airPolicy.interceptNationSmallIds.has(other.smallID())
+    ) {
+      return false;
+    }
+
+    const midX = this.mg.width() / 2;
+    const midY = this.mg.height() / 2;
+    const x = this.mg.x(tile);
+    const y = this.mg.y(tile);
+
+    const verticalAllowed =
+      y < midY
+        ? this._airPolicy.interceptAreas.north
+        : this._airPolicy.interceptAreas.south;
+    const horizontalAllowed =
+      x < midX
+        ? this._airPolicy.interceptAreas.west
+        : this._airPolicy.interceptAreas.east;
+
+    return verticalAllowed && horizontalAllowed;
   }
 
   getEmbargoes(): Embargo[] {
@@ -1154,6 +1288,12 @@ export class PlayerImpl implements Player {
       case UnitType.Submarine:
       case UnitType.NuclearSubmarine:
         return this.warshipSpawn(targetTile);
+      case UnitType.CargoPlane:
+        return this.cargoPlaneSpawn(targetTile);
+      case UnitType.Interceptor:
+      case UnitType.MultiFighter:
+      case UnitType.Bomber:
+        return this.aircraftSpawn(targetTile);
       case UnitType.Shell:
       case UnitType.SAMMissile:
         return targetTile;
@@ -1169,6 +1309,8 @@ export class PlayerImpl implements Player {
       case UnitType.LongRangeSAMLauncher:
       case UnitType.City:
       case UnitType.Factory:
+      case UnitType.Airport:
+      case UnitType.MilitaryAirport:
         return this.landBasedStructureSpawn(targetTile, validTiles);
       default:
         assertNever(unitType);
@@ -1224,7 +1366,20 @@ export class PlayerImpl implements Player {
         })
       : [];
 
-    const spawns = [...silos, ...nuclearSubmarines].sort(
+    // Bombers can launch nukes up to roughly 3/4 of the map diagonal.
+    const bomberMaxRangeSquared = this.bomberMaxNukeRange() ** 2;
+    const bombers = canUseNuclearSubmarine
+      ? this.units(UnitType.Bomber).filter((bomber) => {
+          return (
+            !bomber.isInCooldown() &&
+            !bomber.isUnderConstruction() &&
+            this.mg.euclideanDistSquared(bomber.tile(), tile) <=
+              bomberMaxRangeSquared
+          );
+        })
+      : [];
+
+    const spawns = [...silos, ...nuclearSubmarines, ...bombers].sort(
       distSortUnit(this.mg, tile),
     );
 
@@ -1238,6 +1393,11 @@ export class PlayerImpl implements Player {
   private siloMaxNukeRange(): number {
     const mapDiagonal = Math.hypot(this.mg.width(), this.mg.height());
     return Math.max(1, Math.floor(mapDiagonal / 3));
+  }
+
+  private bomberMaxNukeRange(): number {
+    const mapDiagonal = Math.hypot(this.mg.width(), this.mg.height());
+    return Math.max(1, Math.floor((mapDiagonal * 3) / 4));
   }
 
   portSpawn(tile: TileRef, validTiles: TileRef[] | null): TileRef | false {
@@ -1268,6 +1428,18 @@ export class PlayerImpl implements Player {
       return false;
     }
     const spawns = this.units(UnitType.Port).sort(
+      (a, b) =>
+        this.mg.manhattanDist(a.tile(), tile) -
+        this.mg.manhattanDist(b.tile(), tile),
+    );
+    if (spawns.length === 0) {
+      return false;
+    }
+    return spawns[0].tile();
+  }
+
+  aircraftSpawn(tile: TileRef): TileRef | false {
+    const spawns = this.units(UnitType.MilitaryAirport).sort(
       (a, b) =>
         this.mg.manhattanDist(a.tile(), tile) -
         this.mg.manhattanDist(b.tile(), tile),
@@ -1335,6 +1507,12 @@ export class PlayerImpl implements Player {
 
   tradeShipSpawn(targetTile: TileRef): TileRef | false {
     return this.units(UnitType.Port).find((u) => u.tile() === targetTile)
+      ? targetTile
+      : false;
+  }
+
+  cargoPlaneSpawn(targetTile: TileRef): TileRef | false {
+    return this.units(UnitType.Airport).find((u) => u.tile() === targetTile)
       ? targetTile
       : false;
   }

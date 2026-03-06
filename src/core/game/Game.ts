@@ -266,9 +266,15 @@ export enum UnitType {
   Warship = "Warship",
   Submarine = "Submarine",
   NuclearSubmarine = "Nuclear Submarine",
+  CargoPlane = "Cargo Plane",
+  Interceptor = "Interceptor",
+  MultiFighter = "Multi Fighter",
+  Bomber = "Bomber",
   Shell = "Shell",
   SAMMissile = "SAMMissile",
   Port = "Port",
+  Airport = "Airport",
+  MilitaryAirport = "Military Airport",
   AtomBomb = "Atom Bomb",
   HydrogenBomb = "Hydrogen Bomb",
   TradeShip = "Trade Ship",
@@ -303,6 +309,9 @@ export const BuildableAttacks = unitTypeGroup([
   UnitType.Warship,
   UnitType.Submarine,
   UnitType.NuclearSubmarine,
+  UnitType.Interceptor,
+  UnitType.MultiFighter,
+  UnitType.Bomber,
 ] as const);
 
 export const Structures = unitTypeGroup([
@@ -313,6 +322,13 @@ export const Structures = unitTypeGroup([
   UnitType.MissileSilo,
   UnitType.Port,
   UnitType.Factory,
+  UnitType.Airport,
+  UnitType.MilitaryAirport,
+] as const);
+
+export const TradeAirports = unitTypeGroup([
+  UnitType.Factory,
+  UnitType.Airport,
 ] as const);
 
 export const SAMLaunchers = unitTypeGroup([
@@ -330,9 +346,17 @@ export const NavalUnits = unitTypeGroup([
   ...Submarines.types,
 ] as const);
 
+export const CommandablePatrolUnits = unitTypeGroup([
+  ...NavalUnits.types,
+  UnitType.Interceptor,
+  UnitType.MultiFighter,
+  UnitType.Bomber,
+] as const);
+
 export const NukeLaunchers = unitTypeGroup([
   UnitType.MissileSilo,
   UnitType.NuclearSubmarine,
+  UnitType.Bomber,
 ] as const);
 
 export const BuildMenus = unitTypeGroup([
@@ -373,11 +397,32 @@ export interface UnitParamsMap {
     patrolTile: TileRef;
   };
 
+  [UnitType.CargoPlane]: {
+    targetUnit: Unit;
+    originOwner: Player;
+  };
+
+  [UnitType.Interceptor]: {
+    patrolTile: TileRef;
+  };
+
+  [UnitType.MultiFighter]: {
+    patrolTile: TileRef;
+  };
+
+  [UnitType.Bomber]: {
+    patrolTile: TileRef;
+  };
+
   [UnitType.Shell]: Record<string, never>;
 
   [UnitType.SAMMissile]: Record<string, never>;
 
   [UnitType.Port]: Record<string, never>;
+
+  [UnitType.Airport]: Record<string, never>;
+
+  [UnitType.MilitaryAirport]: Record<string, never>;
 
   [UnitType.AtomBomb]: {
     targetTile?: number;
@@ -656,6 +701,20 @@ export interface Embargo {
   target: Player;
 }
 
+export type AirRelationCategory = "friends" | "normal" | "enemies";
+
+export interface AirPolicy {
+  tradePermissions: Record<AirRelationCategory, boolean>;
+  interceptPermissions: Record<AirRelationCategory, boolean>;
+  interceptNationSmallIds: Set<number>;
+  interceptAreas: {
+    north: boolean;
+    south: boolean;
+    west: boolean;
+    east: boolean;
+  };
+}
+
 export interface Player {
   // Basic Info
   smallID(): number;
@@ -783,6 +842,10 @@ export interface Player {
   stopEmbargo(other: Player): void;
   endTemporaryEmbargo(other: Player): void;
   canTrade(other: Player): boolean;
+  canAirTradeWith(other: Player): boolean;
+  shouldInterceptAircraftFrom(other: Player, tile: TileRef): boolean;
+  airPolicy(): AirPolicy;
+  setAirPolicy(policy: Partial<AirPolicy>): void;
 
   // Attacking.
   canAttack(tile: TileRef): boolean;

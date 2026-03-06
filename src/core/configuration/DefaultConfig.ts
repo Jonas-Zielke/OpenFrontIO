@@ -360,6 +360,30 @@ export class DefaultConfig implements Config {
           maxHealth: 1100,
         };
         break;
+      case UnitType.CargoPlane:
+        info = {
+          cost: () => 0n,
+          maxHealth: 350,
+        };
+        break;
+      case UnitType.Interceptor:
+        info = {
+          cost: this.costWrapper(() => 250_000, UnitType.Interceptor),
+          maxHealth: 700,
+        };
+        break;
+      case UnitType.MultiFighter:
+        info = {
+          cost: this.costWrapper(() => 400_000, UnitType.MultiFighter),
+          maxHealth: 900,
+        };
+        break;
+      case UnitType.Bomber:
+        info = {
+          cost: this.costWrapper(() => 300_000, UnitType.Bomber),
+          maxHealth: 850,
+        };
+        break;
       case UnitType.Shell:
         info = {
           cost: () => 0n,
@@ -378,8 +402,33 @@ export class DefaultConfig implements Config {
               Math.min(1_000_000, Math.pow(2, numUnits) * 125_000),
             UnitType.Port,
             UnitType.Factory,
+            UnitType.Airport,
           ),
           constructionDuration: this.instantBuild() ? 0 : 2 * 10,
+          upgradable: true,
+        };
+        break;
+      case UnitType.Airport:
+        info = {
+          cost: this.costWrapper(
+            (numUnits: number) =>
+              Math.min(1_000_000, Math.pow(2, numUnits) * 125_000),
+            UnitType.Airport,
+            UnitType.Factory,
+            UnitType.Port,
+          ),
+          constructionDuration: this.instantBuild() ? 0 : 2 * 10,
+          upgradable: true,
+        };
+        break;
+      case UnitType.MilitaryAirport:
+        info = {
+          cost: this.costWrapper(
+            (numUnits: number) =>
+              Math.min(2_000_000, (numUnits + 1) * 250_000),
+            UnitType.MilitaryAirport,
+          ),
+          constructionDuration: this.instantBuild() ? 0 : 3 * 10,
           upgradable: true,
         };
         break;
@@ -469,6 +518,7 @@ export class DefaultConfig implements Config {
               Math.min(1_000_000, Math.pow(2, numUnits) * 125_000),
             UnitType.Factory,
             UnitType.Port,
+            UnitType.Airport,
           ),
           constructionDuration: this.instantBuild() ? 0 : 2 * 10,
           upgradable: true,

@@ -1,4 +1,4 @@
-import { Execution, Game, Unit, UnitType } from "../game/Game";
+import { Execution, Game, TradeAirports, Unit, UnitType } from "../game/Game";
 import { PseudoRandom } from "../PseudoRandom";
 import { TradeShipExecution } from "./TradeShipExecution";
 import { TrainStationExecution } from "./TrainStationExecution";
@@ -84,10 +84,12 @@ export class PortExecution implements Execution {
   }
 
   createStation(): void {
-    const nearbyFactory = this.mg.hasUnitNearby(
-      this.port.tile()!,
-      this.mg.config().trainStationMaxRange(),
-      UnitType.Factory,
+    const nearbyFactory = TradeAirports.types.some((type) =>
+      this.mg.hasUnitNearby(
+        this.port.tile()!,
+        this.mg.config().trainStationMaxRange(),
+        type,
+      ),
     );
     if (nearbyFactory) {
       this.mg.addExecution(new TrainStationExecution(this.port));
