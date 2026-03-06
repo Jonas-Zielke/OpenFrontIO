@@ -4,6 +4,7 @@ import { EventBus } from "../../../core/EventBus";
 import { UnitType } from "../../../core/game/Game";
 import { GameView } from "../../../core/game/GameView";
 import { SendSetAirPolicyIntentEvent } from "../../Transport";
+import { TransformHandler } from "../TransformHandler";
 import { Layer } from "./Layer";
 
 type RelationKey = "friends" | "normal" | "enemies";
@@ -13,6 +14,7 @@ type AreaKey = "north" | "south" | "west" | "east";
 export class AirManager extends LitElement implements Layer {
   public game!: GameView;
   public eventBus!: EventBus;
+  public transformHandler?: TransformHandler;
 
   @state() private visible = false;
   @state() private open = false;
@@ -138,7 +140,7 @@ export class AirManager extends LitElement implements Layer {
       .sort((a, b) => a.smallID() - b.smallID());
 
     return html`
-      <div class="fixed bottom-6 right-6 z-[1300]">
+      <div class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[1300]">
         <button
           class="px-3 py-2 rounded-md bg-slate-900/80 border border-slate-500 text-xs text-white font-semibold hover:bg-slate-700"
           @click=${() => {

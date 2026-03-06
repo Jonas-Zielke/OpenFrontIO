@@ -29,6 +29,152 @@ export class NationWarshipBehavior {
     private emojiBehavior: NationEmojiBehavior,
   ) {}
 
+  maybeSpawnAircraft(): boolean {
+    if (!this.random.chance(2)) {
+      return false;
+    }
+    const config = this.game.config();
+    if (config.isUnitDisabled(UnitType.MilitaryAirport)) {
+      return false;
+    }
+
+    const militaryAirports = this.player
+      .units(UnitType.MilitaryAirport)
+      .filter((airport) => !airport.isUnderConstruction());
+    if (militaryAirports.length === 0) {
+      return false;
+    }
+
+    const patrolTile = this.findAirPatrolTargetTile() ?? militaryAirports[0].tile();
+    const interceptors = this.player.units(UnitType.Interceptor).length;
+    const multiFighters = this.player.units(UnitType.MultiFighter).length;
+    const bombers = this.player.units(UnitType.Bomber).length;
+
+    const maxInterceptors = Math.max(2, militaryAirports.length * 4);
+    const maxMultiFighters = Math.max(1, militaryAirports.length * 3);
+    const maxBombers = Math.max(1, militaryAirports.length * 2);
+
+    const aircraftCandidates: UnitType[] = [];
+    if (
+      !config.isUnitDisabled(UnitType.Interceptor) &&
+      interceptors < maxInterceptors
+    ) {
+      aircraftCandidates.push(UnitType.Interceptor);
+    }
+    if (
+      !config.isUnitDisabled(UnitType.MultiFighter) &&
+      multiFighters < maxMultiFighters
+    ) {
+      aircraftCandidates.push(UnitType.MultiFighter);
+    }
+    if (
+      !config.isUnitDisabled(UnitType.Bomber) &&
+      (!config.isUnitDisabled(UnitType.AtomBomb) ||
+        !config.isUnitDisabled(UnitType.HydrogenBomb)) &&
+      bombers < maxBombers
+    ) {
+      aircraftCandidates.push(UnitType.Bomber);
+    }
+
+    if (aircraftCandidates.length === 0) {
+      return false;
+    }
+
+    let aircraftType: UnitType;
+    if (
+      interceptors === 0 &&
+      aircraftCandidates.includes(UnitType.Interceptor)
+    ) {
+      aircraftType = UnitType.Interceptor;
+    } else if (
+      aircraftCandidates.includes(UnitType.Bomber) &&
+      this.random.chance(3)
+    ) {
+      aircraftType = UnitType.Bomber;
+    } else if (
+      aircraftCandidates.includes(UnitType.MultiFighter) &&
+      this.random.chance(2)
+    ) {
+      aircraftType = UnitType.MultiFighter;
+    } else {
+      aircraftType = this.random.randElement(aircraftCandidates);
+    }
+
+    if (this.player.gold() < this.cost(aircraftType)) {
+      return false;
+    }
+    const canBuild = this.player.canBuild(aircraftType, patrolTile);
+    if (canBuild === false) {
+      return false;
+    }
+    this.game.addExecution(
+      new ConstructionExecution(this.player, aircraftType, patrolTile),
+    );
+    return true;
+  }
+
+  commandAircraft(): void {
+    if (!this.random.chance(4)) {
+      return;
+    }
+    const patrolTile = this.findAirPatrolTargetTile();
+    if (patrolTile === null) {
+      return;
+    }
+    const aircraft = this.player
+      .units(UnitType.Interceptor, UnitType.MultiFighter, UnitType.Bomber)
+      .filter((unit) => unit.isActive() && !unit.isUnderConstruction());
+
+    for (const unit of aircraft) {
+      const currentPatrol = unit.patrolTile() ?? unit.tile();
+      if (this.game.euclideanDistSquared(currentPatrol, patrolTile) <= 225) {
+        continue;
+      }
+      unit.setPatrolTile(patrolTile);
+      unit.setTargetTile(patrolTile);
+    }
+  }
+
+  private findAirPatrolTargetTile(): TileRef | null {
+    const incomingFrom = this.player
+      .incomingAttacks()
+      .map((attack) => attack.sourceTile())
+      .find((tile) => tile !== null);
+    if (incomingFrom !== undefined && incomingFrom !== null) {
+      return incomingFrom;
+    }
+
+    const enemies = this.game
+      .players()
+      .filter(
+        (other) =>
+          other !== this.player &&
+          other.type() !== PlayerType.Bot &&
+          other.isAlive() &&
+          !this.player.isFriendly(other),
+      )
+      .sort((a, b) => Number(this.game.config().maxTroops(b) - this.game.config().maxTroops(a)));
+
+    for (const enemy of enemies) {
+      const highValueTargets = enemy.units(
+        UnitType.City,
+        UnitType.Factory,
+        UnitType.Airport,
+        UnitType.MilitaryAirport,
+        UnitType.Port,
+      );
+      if (highValueTargets.length > 0) {
+        return this.random.randElement(highValueTargets).tile();
+      }
+      const borderTiles = Array.from(enemy.borderTiles());
+      if (borderTiles.length > 0) {
+        return this.random.randElement(borderTiles);
+      }
+    }
+
+    return null;
+  }
+
   maybeSpawnWarship(): boolean {
     if (this.player === null) throw new Error("not initialized");
     if (!this.random.chance(50)) {

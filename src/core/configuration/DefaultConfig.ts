@@ -429,7 +429,7 @@ export class DefaultConfig implements Config {
             UnitType.MilitaryAirport,
           ),
           constructionDuration: this.instantBuild() ? 0 : 3 * 10,
-          upgradable: true,
+          upgradable: false,
         };
         break;
       case UnitType.AtomBomb:

@@ -59,9 +59,13 @@ export class NationNukeBehavior {
       return;
     }
 
-    const silos = this.player.units(UnitType.MissileSilo);
+    const launchers = this.player.units(
+      UnitType.MissileSilo,
+      UnitType.NuclearSubmarine,
+      UnitType.Bomber,
+    );
     if (
-      silos.length === 0 ||
+      launchers.length === 0 ||
       nukeTarget.type() === PlayerType.Bot || // Don't nuke bots (as opposed to nations and humans)
       this.player.isOnSameTeam(nukeTarget) ||
       this.attackBehavior.shouldAttack(nukeTarget) === false
@@ -93,6 +97,8 @@ export class NationNukeBehavior {
       UnitType.DefensePost,
       UnitType.MissileSilo,
       UnitType.Port,
+      UnitType.Airport,
+      UnitType.MilitaryAirport,
       UnitType.SAMLauncher,
       UnitType.LongRangeSAMLauncher,
       UnitType.Factory,
@@ -144,7 +150,7 @@ export class NationNukeBehavior {
         continue;
       }
 
-      const value = this.nukeTileScore(tile, silos, structures, nukeType);
+      const value = this.nukeTileScore(tile, launchers, structures, nukeType);
       if (value > bestValue) {
         bestTile = tile;
         bestValue = value;
@@ -592,7 +598,7 @@ export class NationNukeBehavior {
 
   private nukeTileScore(
     tile: TileRef,
-    silos: Unit[],
+    launchers: Unit[],
     targets: Unit[],
     nukeType: UnitType.AtomBomb | UnitType.HydrogenBomb,
   ): number {
@@ -611,6 +617,10 @@ export class NationNukeBehavior {
             return 50_000 * level;
           case UnitType.Port:
             return 15_000 * level;
+          case UnitType.Airport:
+            return 15_000 * level;
+          case UnitType.MilitaryAirport:
+            return 20_000 * level;
           case UnitType.Factory:
             return 15_000 * level;
           default:
@@ -665,8 +675,8 @@ export class NationNukeBehavior {
     }
 
     // Prefer tiles that are closer to a silo (but preserve structure value)
-    const siloTiles = silos.map((u) => u.tile());
-    const result = closestTwoTiles(this.game, siloTiles, [tile]);
+    const launcherTiles = launchers.map((u) => u.tile());
+    const result = closestTwoTiles(this.game, launcherTiles, [tile]);
     if (result === null) throw new Error("Missing result");
     const { x: closestSilo } = result;
     const distanceSquared = this.game.euclideanDistSquared(tile, closestSilo);

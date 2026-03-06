@@ -1379,9 +1379,17 @@ export class PlayerImpl implements Player {
         })
       : [];
 
-    const spawns = [...silos, ...nuclearSubmarines, ...bombers].sort(
+    const sortedSilos = silos.sort(distSortUnit(this.mg, tile));
+    const sortedNuclearSubmarines = nuclearSubmarines.sort(
       distSortUnit(this.mg, tile),
     );
+    const sortedBombers = bombers.sort(distSortUnit(this.mg, tile));
+
+    // For atom/hydrogen bombs, prefer bomber delivery first so payload is flown
+    // to target and dropped from aircraft.
+    const spawns = canUseNuclearSubmarine
+      ? [...sortedBombers, ...sortedNuclearSubmarines, ...sortedSilos]
+      : sortedSilos;
 
     if (spawns.length === 0) {
       return false;

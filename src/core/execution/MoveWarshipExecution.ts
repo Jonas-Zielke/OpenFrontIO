@@ -25,7 +25,8 @@ export class MoveWarshipExecution implements Execution {
       return;
     }
     patrolUnit.setPatrolTile(this.position);
-    patrolUnit.setTargetTile(undefined);
+    // Move immediately to the commanded tile, then continue patrolling there.
+    patrolUnit.setTargetTile(this.position);
   }
 
   tick(ticks: number): void {}

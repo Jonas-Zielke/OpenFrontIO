@@ -19,11 +19,15 @@ import { NukeType } from "../StatsSchemas";
 import { listNukeBreakAlliance } from "./Util";
 
 const SPRITE_RADIUS = 16;
+const BOMBER_DROP_RANGE_SQUARED = 9;
 
 export class NukeExecution implements Execution {
   private active = true;
   private mg: Game;
   private nuke: Unit | null = null;
+  private launcher: Unit | null = null;
+  private bomberMissionActive = false;
+  private bomberMissionOrigin: TileRef | null = null;
   private tilesToDestroyCache: Set<TileRef> | undefined;
   private pathFinder: ParabolaUniversalPathFinder;
 
@@ -128,6 +132,11 @@ export class NukeExecution implements Execution {
   }
 
   tick(ticks: number): void {
+    if (this.bomberMissionActive && this.nuke === null) {
+      this.handleBomberMission();
+      return;
+    }
+
     if (this.nuke === null) {
       const spawn = this.player.canBuild(this.nukeType, this.dst);
       if (spawn === false) {
@@ -136,46 +145,14 @@ export class NukeExecution implements Execution {
         return;
       }
       this.src = spawn;
-      this.nuke = this.player.buildUnit(this.nukeType, spawn, {
-        targetTile: this.dst,
-        trajectory: this.getTrajectory(this.dst),
-      });
-      if (this.nuke.type() !== UnitType.MIRVWarhead) {
-        this.maybeBreakAlliances();
-      }
-      if (this.mg.hasOwner(this.dst)) {
-        const target = this.mg.owner(this.dst);
-        if (!target.isPlayer()) {
-          // Ignore terra nullius
-        } else if (this.nukeType === UnitType.AtomBomb) {
-          this.mg.displayIncomingUnit(
-            this.nuke.id(),
-            // TODO TranslateText
-            `${this.player.name()} - atom bomb inbound`,
-            MessageType.NUKE_INBOUND,
-            target.id(),
-          );
-        } else if (this.nukeType === UnitType.HydrogenBomb) {
-          this.mg.displayIncomingUnit(
-            this.nuke.id(),
-            // TODO TranslateText
-            `${this.player.name()} - hydrogen bomb inbound`,
-            MessageType.HYDROGEN_BOMB_INBOUND,
-            target.id(),
-          );
-        }
+      this.launcher = this.resolveLauncherAtSource(spawn);
 
-        // Record stats
-        this.mg.stats().bombLaunch(this.player, target, this.nukeType);
+      if (this.shouldUseBomberDelivery()) {
+        this.startBomberMission();
+        return;
       }
-
-      // After sending a nuke, set the launcher on cooldown.
-      const launcher = this.player
-        .units(...NukeLaunchers.types)
-        .find((unit) => unit.tile() === spawn);
-      if (launcher) {
-        launcher.launch();
-      }
+      this.launchNuke(spawn);
+      this.markLauncherCooldown();
       return;
     }
 
@@ -206,6 +183,167 @@ export class NukeExecution implements Execution {
 
   public getNuke(): Unit | null {
     return this.nuke;
+  }
+
+  private resolveLauncherAtSource(source: TileRef): Unit | null {
+    const candidates = this.player
+      .units(...NukeLaunchers.types)
+      .filter(
+        (unit) =>
+          unit.tile() === source &&
+          !unit.isUnderConstruction() &&
+          !unit.isInCooldown(),
+      );
+
+    if (candidates.length === 0) {
+      return null;
+    }
+
+    if (
+      this.nukeType === UnitType.AtomBomb ||
+      this.nukeType === UnitType.HydrogenBomb
+    ) {
+      return (
+        candidates.find((unit) => unit.type() === UnitType.Bomber) ??
+        candidates.find((unit) => unit.type() === UnitType.NuclearSubmarine) ??
+        candidates.find((unit) => unit.type() === UnitType.MissileSilo) ??
+        candidates[0]
+      );
+    }
+
+    return (
+      candidates.find((unit) => unit.type() === UnitType.MissileSilo) ??
+      candidates[0]
+    );
+  }
+
+  private shouldUseBomberDelivery(): boolean {
+    if (this.launcher === null) {
+      return false;
+    }
+    if (this.launcher.type() !== UnitType.Bomber) {
+      return false;
+    }
+    return (
+      this.nukeType === UnitType.AtomBomb ||
+      this.nukeType === UnitType.HydrogenBomb
+    );
+  }
+
+  private startBomberMission() {
+    if (this.launcher === null || this.src === null || this.src === undefined) {
+      this.active = false;
+      return;
+    }
+    this.bomberMissionActive = true;
+    this.bomberMissionOrigin = this.src;
+    // Bomber "takes off" toward target and payload is now committed.
+    this.launcher.launch();
+    this.launcher.setPatrolTile(this.dst);
+    this.launcher.setTargetTile(this.dst);
+  }
+
+  private handleBomberMission() {
+    if (this.launcher === null || this.launcher.type() !== UnitType.Bomber) {
+      this.active = false;
+      return;
+    }
+    if (!this.launcher.isActive() || this.launcher.owner() !== this.player) {
+      this.active = false;
+      return;
+    }
+
+    this.launcher.setPatrolTile(this.dst);
+    if (this.launcher.targetTile() === undefined) {
+      this.launcher.setTargetTile(this.dst);
+    }
+
+    if (
+      this.mg.euclideanDistSquared(this.launcher.tile(), this.dst) >
+      BOMBER_DROP_RANGE_SQUARED
+    ) {
+      return;
+    }
+
+    if (this.waitTicks > 0) {
+      this.waitTicks--;
+      return;
+    }
+
+    this.src = this.launcher.tile();
+    this.launchNuke(this.src);
+    if (this.nuke === null) {
+      this.active = false;
+      return;
+    }
+
+    if (this.bomberMissionOrigin !== null && this.launcher.isActive()) {
+      // After dropping payload, send bomber back to base patrol.
+      this.launcher.setPatrolTile(this.bomberMissionOrigin);
+      this.launcher.setTargetTile(this.bomberMissionOrigin);
+    }
+
+    this.nuke.setReachedTarget();
+    this.detonate();
+  }
+
+  private launchNuke(spawn: TileRef) {
+    this.nuke = this.player.buildUnit(this.nukeType, spawn, {
+      targetTile: this.dst,
+      trajectory: this.getTrajectory(this.dst),
+    });
+    if (this.nuke.type() !== UnitType.MIRVWarhead) {
+      this.maybeBreakAlliances();
+    }
+    this.displayNukeLaunchWarnings();
+  }
+
+  private displayNukeLaunchWarnings() {
+    if (this.nuke === null) {
+      return;
+    }
+    if (this.mg.hasOwner(this.dst)) {
+      const target = this.mg.owner(this.dst);
+      if (!target.isPlayer()) {
+        // Ignore terra nullius
+      } else if (this.nukeType === UnitType.AtomBomb) {
+        this.mg.displayIncomingUnit(
+          this.nuke.id(),
+          // TODO TranslateText
+          `${this.player.name()} - atom bomb inbound`,
+          MessageType.NUKE_INBOUND,
+          target.id(),
+        );
+      } else if (this.nukeType === UnitType.HydrogenBomb) {
+        this.mg.displayIncomingUnit(
+          this.nuke.id(),
+          // TODO TranslateText
+          `${this.player.name()} - hydrogen bomb inbound`,
+          MessageType.HYDROGEN_BOMB_INBOUND,
+          target.id(),
+        );
+      }
+
+      // Record stats
+      this.mg.stats().bombLaunch(this.player, target, this.nukeType);
+    }
+  }
+
+  private markLauncherCooldown() {
+    if (this.launcher !== null && this.launcher.isActive()) {
+      this.launcher.launch();
+      return;
+    }
+
+    if (this.src === undefined || this.src === null) {
+      return;
+    }
+    const launcher = this.player
+      .units(...NukeLaunchers.types)
+      .find((unit) => unit.tile() === this.src);
+    if (launcher) {
+      launcher.launch();
+    }
   }
 
   private getTrajectory(target: TileRef): TrajectoryTile[] {

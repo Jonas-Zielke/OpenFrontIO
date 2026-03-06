@@ -150,6 +150,10 @@ export class UnitView {
     return this.data.targetTile;
   }
 
+  patrolTile(): TileRef | undefined {
+    return this.data.patrolTile;
+  }
+
   // How "ready" this unit is from 0 to 1.
   missileReadinesss(): number {
     const maxMissiles = this.data.level;

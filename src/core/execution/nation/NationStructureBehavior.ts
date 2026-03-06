@@ -51,6 +51,14 @@ function getStructureRatios(
       ratioPerCity: 0.75,
       perceivedCostIncreasePerOwned: 1,
     },
+    [UnitType.Airport]: {
+      ratioPerCity: 0.5,
+      perceivedCostIncreasePerOwned: 1,
+    },
+    [UnitType.MilitaryAirport]: {
+      ratioPerCity: 0.35,
+      perceivedCostIncreasePerOwned: 0.75,
+    },
     [UnitType.DefensePost]: {
       ratioPerCity: 0.25,
       perceivedCostIncreasePerOwned: 1,
@@ -111,9 +119,11 @@ export class NationStructureBehavior {
 
     // Build order for non-city structures (priority order)
     const buildOrder: UnitType[] = [
-      UnitType.DefensePost,
       UnitType.Port,
       UnitType.Factory,
+      UnitType.Airport,
+      UnitType.DefensePost,
+      UnitType.MilitaryAirport,
       UnitType.SAMLauncher,
       UnitType.MissileSilo,
     ];
@@ -503,6 +513,10 @@ export class NationStructureBehavior {
         return this.missileSiloValue();
       case UnitType.Factory:
         return this.factoryValue();
+      case UnitType.Airport:
+        return this.airportValue();
+      case UnitType.MilitaryAirport:
+        return this.militaryAirportValue();
       case UnitType.Port:
         return this.portValue();
       case UnitType.DefensePost:
@@ -710,6 +724,7 @@ export class NationStructureBehavior {
       UnitType.City,
       UnitType.Port,
       UnitType.Factory,
+      UnitType.Airport,
     )) {
       if (unitToCluster.has(unit)) {
         result.push({
@@ -735,6 +750,7 @@ export class NationStructureBehavior {
         UnitType.City,
         UnitType.Port,
         UnitType.Factory,
+        UnitType.Airport,
       )) {
         if (unitToCluster.has(unit)) {
           result.push({
@@ -782,6 +798,56 @@ export class NationStructureBehavior {
     let score = isolatedWeight;
     for (const cw of clustersInRange.values()) score += cw;
     return score;
+  }
+
+  /**
+   * Airport uses the same economic placement logic as factories.
+   */
+  private airportValue(): (tile: TileRef) => number {
+    return this.factoryValue();
+  }
+
+  /**
+   * Value function for military airports.
+   * Prefers medium-border positions with spacing from existing military airports.
+   */
+  private militaryAirportValue(): (tile: TileRef) => number {
+    const game = this.game;
+    const borderTiles = this.player.borderTiles();
+    const existingMilitaryAirports: Set<TileRef> = new Set(
+      this.player.units(UnitType.MilitaryAirport).map((u) => u.tile()),
+    );
+    const { borderSpacing, structureSpacing } = this.spacingConstants();
+
+    return (tile) => {
+      let w = 0;
+
+      // Moderate preference for higher elevation.
+      w += game.magnitude(tile);
+
+      const [, closestBorderDistRaw] = closestTile(game, borderTiles, tile);
+      const closestBorderDist = Number.isFinite(closestBorderDistRaw)
+        ? closestBorderDistRaw
+        : borderSpacing;
+      const preferredBorderDist = Math.floor(borderSpacing * 0.35);
+      // Encourage coverage near borders while avoiding extreme edge clustering.
+      w += Math.max(
+        0,
+        borderSpacing - Math.abs(closestBorderDist - preferredBorderDist),
+      );
+
+      const closestMilitaryAirport = closestTwoTiles(
+        game,
+        existingMilitaryAirports,
+        [tile],
+      );
+      if (closestMilitaryAirport !== null) {
+        const d = game.manhattanDist(closestMilitaryAirport.x, tile);
+        w += Math.min(d, structureSpacing);
+      }
+
+      return w;
+    };
   }
 
   /**

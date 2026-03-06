@@ -103,7 +103,10 @@ export class UnitImpl implements Unit {
   }
 
   setPatrolTile(tile: TileRef): void {
-    this._patrolTile = tile;
+    if (this._patrolTile !== tile) {
+      this._patrolTile = tile;
+      this.mg.addUpdate(this.toUpdate());
+    }
   }
 
   patrolTile(): TileRef | undefined {
@@ -147,6 +150,7 @@ export class UnitImpl implements Unit {
       underConstruction: this._underConstruction,
       targetUnitId: this._targetUnit?.id() ?? undefined,
       targetTile: this.targetTile() ?? undefined,
+      patrolTile: this.patrolTile() ?? undefined,
       missileTimerQueue: this._missileTimerQueue,
       level: this.level(),
       hasTrainStation: this._hasTrainStation,

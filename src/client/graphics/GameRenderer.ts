@@ -26,6 +26,7 @@ import { InGameHeaderAd } from "./layers/InGameHeaderAd";
 import { Layer } from "./layers/Layer";
 import { Leaderboard } from "./layers/Leaderboard";
 import { MainRadialMenu } from "./layers/MainRadialMenu";
+import { MilitaryAirportManager } from "./layers/MilitaryAirportManager";
 import { MultiTabModal } from "./layers/MultiTabModal";
 import { NameLayer } from "./layers/NameLayer";
 import { NukeTrajectoryPreviewLayer } from "./layers/NukeTrajectoryPreviewLayer";
@@ -202,6 +203,17 @@ export function createRenderer(
   }
   airManager.game = game;
   airManager.eventBus = eventBus;
+  airManager.transformHandler = transformHandler;
+
+  const militaryAirportManager = document.querySelector(
+    "military-airport-manager",
+  ) as MilitaryAirportManager;
+  if (!(militaryAirportManager instanceof MilitaryAirportManager)) {
+    console.error("military airport manager not found");
+  }
+  militaryAirportManager.game = game;
+  militaryAirportManager.eventBus = eventBus;
+  militaryAirportManager.transformHandler = transformHandler;
 
   const playerPanel = document.querySelector("player-panel") as PlayerPanel;
   if (!(playerPanel instanceof PlayerPanel)) {
@@ -320,6 +332,7 @@ export function createRenderer(
     gameLeftSidebar,
     unitDisplay,
     airManager,
+    militaryAirportManager,
     gameRightSidebar,
     controlPanel,
     playerInfo,
