@@ -87,7 +87,8 @@ export function getApiOrigin(): string {
     return "http://localhost:8787";
   }
 
-  return `https://api.${deriveAudienceFromHostname(window.location.hostname)}`;
+  // In self-hosted deployments (Render, Docker, etc.), API is usually same-origin.
+  return `${window.location.protocol}//${window.location.host}`;
 }
 
 export function getApiUrl(path: string): string {

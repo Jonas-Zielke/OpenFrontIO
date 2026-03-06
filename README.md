@@ -113,23 +113,24 @@ To connect to production api servers:
 npm run dev:prod
 ```
 
-## ▲ Vercel Deployment (Frontend)
+## ▲ Render Deployment
 
-This repository can be deployed to Vercel as a static frontend, while the game backend (API + workers + websockets) runs separately.
+This repository includes a Render Blueprint at [`render.yaml`](render.yaml), so you can deploy by importing the repo.
 
-1. Import the repo into Vercel.
-1. Keep the default build from [`vercel.json`](vercel.json):
-   - `installCommand`: `npm run inst`
-   - `buildCommand`: `npm run build-prod`
-   - `outputDirectory`: `static`
-1. Set project environment variables:
-   - `API_DOMAIN` (required): backend host, for example `api.openfront.io` or `https://api.example.com`
-   - `WEBSOCKET_URL` (optional): websocket host if different from `API_DOMAIN`, for example `wss://ws.example.com`
-1. Deploy.
+1. Commit and push your branch.
+1. In Render, click **New +** -> **Blueprint**.
+1. Select this repository and apply the Blueprint.
+1. Wait for the first build/deploy to finish.
+
+Default Blueprint behavior:
+- Build command: `npm run inst && npm run build-prod`
+- Start command: `npm run start:server`
+- Health check: `/api/health`
+- `GAME_ENV=dev` (turnstile/login-related checks disabled for gameplay flow)
 
 Notes:
-- `vercel.json` includes SPA fallback routing to `index.html` so lobby/game URLs like `/w3/game/ABCD1234` work when opened directly.
-- If `API_DOMAIN` is not set, production defaults to `https://api.<current-domain>`.
+- Frontend and backend run together on the same Render web service.
+- API/WebSocket endpoints default to same-origin automatically, so `API_DOMAIN` and `WEBSOCKET_URL` are optional.
 
 ## 🛠️ Development Tools
 

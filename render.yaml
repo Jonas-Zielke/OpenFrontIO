@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: openfrontio
+    runtime: node
+    autoDeploy: true
+    buildCommand: npm run inst && npm run build-prod
+    startCommand: npm run start:server
+    healthCheckPath: /api/health
+    envVars:
+      - key: GAME_ENV
+        value: dev

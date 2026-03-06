@@ -131,7 +131,8 @@ export async function startMaster() {
     );
   });
 
-  const PORT = 3000;
+  const portFromEnv = Number.parseInt(process.env.PORT ?? "", 10);
+  const PORT = Number.isFinite(portFromEnv) ? portFromEnv : 3000;
   server.listen(PORT, () => {
     log.info(`Master HTTP server listening on port ${PORT}`);
   });
