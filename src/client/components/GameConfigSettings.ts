@@ -98,11 +98,7 @@ const unitOptions: { type: UnitType; translationKey: string }[] = [
     type: UnitType.NuclearSubmarine,
     translationKey: "unit_type.nuclear_submarine",
   },
-  { type: UnitType.Interceptor, translationKey: "unit_type.interceptor" },
-  { type: UnitType.MultiFighter, translationKey: "unit_type.multi_fighter" },
-  { type: UnitType.Bomber, translationKey: "unit_type.bomber" },
   { type: UnitType.TransportShip, translationKey: "unit_type.boat" },
-  { type: UnitType.CargoPlane, translationKey: "unit_type.cargo_plane" },
   { type: UnitType.MissileSilo, translationKey: "unit_type.missile_silo" },
   { type: UnitType.SAMLauncher, translationKey: "unit_type.sam_launcher" },
   {
@@ -113,11 +109,6 @@ const unitOptions: { type: UnitType; translationKey: string }[] = [
   { type: UnitType.HydrogenBomb, translationKey: "unit_type.hydrogen_bomb" },
   { type: UnitType.MIRV, translationKey: "unit_type.mirv" },
   { type: UnitType.Factory, translationKey: "unit_type.factory" },
-  { type: UnitType.Airport, translationKey: "unit_type.airport" },
-  {
-    type: UnitType.MilitaryAirport,
-    translationKey: "unit_type.military_airport",
-  },
 ];
 
 const MAP_ICON = svg`<path

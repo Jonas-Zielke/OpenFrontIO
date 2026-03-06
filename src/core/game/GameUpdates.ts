@@ -1,6 +1,5 @@
 import { AllPlayersStats, ClientID, Winner } from "../Schemas";
 import {
-  AirPolicy,
   EmojiMessage,
   GameUpdates,
   Gold,
@@ -143,7 +142,6 @@ export interface UnitUpdate {
   markedForDeletion: number | false;
   targetUnitId?: number; // Only for trade ships
   targetTile?: TileRef; // Only for nukes
-  patrolTile?: TileRef; // Only for patrol units
   health?: number;
   underConstruction?: boolean;
   missileTimerQueue: number[];
@@ -186,7 +184,6 @@ export interface PlayerUpdate {
   incomingAttacks: AttackUpdate[];
   outgoingAllianceRequests: PlayerID[];
   alliances: AllianceView[];
-  airPolicy?: AirPolicy;
   hasSpawned: boolean;
   betrayals: number;
   lastDeleteUnitTick: Tick;

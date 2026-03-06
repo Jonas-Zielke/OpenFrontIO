@@ -54,16 +54,6 @@ export class StructureLayer implements Layer {
       borderRadius: BASE_BORDER_RADIUS * RADIUS_SCALE_FACTOR,
       territoryRadius: BASE_TERRITORY_RADIUS * RADIUS_SCALE_FACTOR,
     },
-    [UnitType.Airport]: {
-      icon: factoryIcon,
-      borderRadius: BASE_BORDER_RADIUS * RADIUS_SCALE_FACTOR,
-      territoryRadius: BASE_TERRITORY_RADIUS * RADIUS_SCALE_FACTOR,
-    },
-    [UnitType.MilitaryAirport]: {
-      icon: SAMMissileIcon,
-      borderRadius: BASE_BORDER_RADIUS * RADIUS_SCALE_FACTOR,
-      territoryRadius: BASE_TERRITORY_RADIUS * RADIUS_SCALE_FACTOR,
-    },
     [UnitType.MissileSilo]: {
       icon: missileSiloIcon,
       borderRadius: BASE_BORDER_RADIUS * RADIUS_SCALE_FACTOR,

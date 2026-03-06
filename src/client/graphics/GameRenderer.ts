@@ -7,7 +7,6 @@ import { FrameProfiler } from "./FrameProfiler";
 import { TransformHandler } from "./TransformHandler";
 import { UIState } from "./UIState";
 import { AlertFrame } from "./layers/AlertFrame";
-import { AirManager } from "./layers/AirManager";
 import { AttacksDisplay } from "./layers/AttacksDisplay";
 import { BuildMenu } from "./layers/BuildMenu";
 import { ChatDisplay } from "./layers/ChatDisplay";
@@ -26,7 +25,6 @@ import { InGameHeaderAd } from "./layers/InGameHeaderAd";
 import { Layer } from "./layers/Layer";
 import { Leaderboard } from "./layers/Leaderboard";
 import { MainRadialMenu } from "./layers/MainRadialMenu";
-import { MilitaryAirportManager } from "./layers/MilitaryAirportManager";
 import { MultiTabModal } from "./layers/MultiTabModal";
 import { NameLayer } from "./layers/NameLayer";
 import { NukeTrajectoryPreviewLayer } from "./layers/NukeTrajectoryPreviewLayer";
@@ -197,24 +195,6 @@ export function createRenderer(
   unitDisplay.eventBus = eventBus;
   unitDisplay.uiState = uiState;
 
-  const airManager = document.querySelector("air-manager") as AirManager;
-  if (!(airManager instanceof AirManager)) {
-    console.error("air manager not found");
-  }
-  airManager.game = game;
-  airManager.eventBus = eventBus;
-  airManager.transformHandler = transformHandler;
-
-  const militaryAirportManager = document.querySelector(
-    "military-airport-manager",
-  ) as MilitaryAirportManager;
-  if (!(militaryAirportManager instanceof MilitaryAirportManager)) {
-    console.error("military airport manager not found");
-  }
-  militaryAirportManager.game = game;
-  militaryAirportManager.eventBus = eventBus;
-  militaryAirportManager.transformHandler = transformHandler;
-
   const playerPanel = document.querySelector("player-panel") as PlayerPanel;
   if (!(playerPanel instanceof PlayerPanel)) {
     console.error("player panel not found");
@@ -331,8 +311,6 @@ export function createRenderer(
     leaderboard,
     gameLeftSidebar,
     unitDisplay,
-    airManager,
-    militaryAirportManager,
     gameRightSidebar,
     controlPanel,
     playerInfo,

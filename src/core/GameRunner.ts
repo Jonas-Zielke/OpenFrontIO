@@ -106,10 +106,7 @@ export class GameRunner {
       this.game.addExecution(...this.execManager.nationExecutions());
     }
     this.game.addExecution(new WinCheckExecution());
-    if (
-      !this.game.config().isUnitDisabled(UnitType.Factory) ||
-      !this.game.config().isUnitDisabled(UnitType.Airport)
-    ) {
+    if (!this.game.config().isUnitDisabled(UnitType.Factory)) {
       this.game.addExecution(
         new RecomputeRailClusterExecution(this.game.railNetwork()),
       );

@@ -41,13 +41,8 @@ export class UnitDisplay extends LitElement implements Layer {
   private _factories = 0;
   private _missileSilo = 0;
   private _port = 0;
-  private _airport = 0;
-  private _militaryAirport = 0;
   private _submarines = 0;
   private _nuclearSubmarines = 0;
-  private _interceptors = 0;
-  private _multiFighters = 0;
-  private _bombers = 0;
   private _defensePost = 0;
   private _samLauncher = 0;
   private allDisabled = false;
@@ -91,8 +86,7 @@ export class UnitDisplay extends LitElement implements Layer {
         return (
           this.cost(item) <= (player?.gold() ?? 0n) &&
           ((player?.units(UnitType.MissileSilo).length ?? 0) > 0 ||
-            (player?.units(UnitType.NuclearSubmarine).length ?? 0) > 0 ||
-            (player?.units(UnitType.Bomber).length ?? 0) > 0)
+            (player?.units(UnitType.NuclearSubmarine).length ?? 0) > 0)
         );
       case UnitType.MIRV:
         return (
@@ -105,13 +99,6 @@ export class UnitDisplay extends LitElement implements Layer {
         return (
           this.cost(item) <= (player?.gold() ?? 0n) &&
           (player?.units(UnitType.Port).length ?? 0) > 0
-        );
-      case UnitType.Interceptor:
-      case UnitType.MultiFighter:
-      case UnitType.Bomber:
-        return (
-          this.cost(item) <= (player?.gold() ?? 0n) &&
-          (player?.units(UnitType.MilitaryAirport).length ?? 0) > 0
         );
       default:
         return this.cost(item) <= (player?.gold() ?? 0n);
@@ -127,13 +114,8 @@ export class UnitDisplay extends LitElement implements Layer {
     this._cities = player.totalUnitLevels(UnitType.City);
     this._missileSilo = player.totalUnitLevels(UnitType.MissileSilo);
     this._port = player.totalUnitLevels(UnitType.Port);
-    this._airport = player.totalUnitLevels(UnitType.Airport);
-    this._militaryAirport = player.totalUnitLevels(UnitType.MilitaryAirport);
     this._submarines = player.totalUnitLevels(UnitType.Submarine);
     this._nuclearSubmarines = player.totalUnitLevels(UnitType.NuclearSubmarine);
-    this._interceptors = player.totalUnitLevels(UnitType.Interceptor);
-    this._multiFighters = player.totalUnitLevels(UnitType.MultiFighter);
-    this._bombers = player.totalUnitLevels(UnitType.Bomber);
     this._defensePost = player.totalUnitLevels(UnitType.DefensePost);
     this._samLauncher =
       player.totalUnitLevels(UnitType.SAMLauncher) +
@@ -185,20 +167,6 @@ export class UnitDisplay extends LitElement implements Layer {
               this.keybinds["buildPort"]?.key ?? "3",
             )}
             ${this.renderUnitItem(
-              factoryIcon,
-              this._airport,
-              UnitType.Airport,
-              "airport",
-              "",
-            )}
-            ${this.renderUnitItem(
-              samLauncherIcon,
-              this._militaryAirport,
-              UnitType.MilitaryAirport,
-              "military_airport",
-              "",
-            )}
-            ${this.renderUnitItem(
               defensePostIcon,
               this._defensePost,
               UnitType.DefensePost,
@@ -242,27 +210,6 @@ export class UnitDisplay extends LitElement implements Layer {
               this._nuclearSubmarines,
               UnitType.NuclearSubmarine,
               "nuclear_submarine",
-              "",
-            )}
-            ${this.renderUnitItem(
-              warshipIcon,
-              this._interceptors,
-              UnitType.Interceptor,
-              "interceptor",
-              "",
-            )}
-            ${this.renderUnitItem(
-              warshipIcon,
-              this._multiFighters,
-              UnitType.MultiFighter,
-              "multi_fighter",
-              "",
-            )}
-            ${this.renderUnitItem(
-              atomBombIcon,
-              this._bombers,
-              UnitType.Bomber,
-              "bomber",
               "",
             )}
             ${this.renderUnitItem(
@@ -368,7 +315,6 @@ export class UnitDisplay extends LitElement implements Layer {
                   new ToggleStructureEvent([
                     UnitType.MissileSilo,
                     UnitType.NuclearSubmarine,
-                    UnitType.Bomber,
                     UnitType.SAMLauncher,
                     UnitType.LongRangeSAMLauncher,
                   ]),
@@ -378,13 +324,6 @@ export class UnitDisplay extends LitElement implements Layer {
               case UnitType.Submarine:
               case UnitType.NuclearSubmarine:
                 this.eventBus?.emit(new ToggleStructureEvent([UnitType.Port]));
-                break;
-              case UnitType.Interceptor:
-              case UnitType.MultiFighter:
-              case UnitType.Bomber:
-                this.eventBus?.emit(
-                  new ToggleStructureEvent([UnitType.MilitaryAirport]),
-                );
                 break;
               default:
                 this.eventBus?.emit(new ToggleStructureEvent([unitType]));

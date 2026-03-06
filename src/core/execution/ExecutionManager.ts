@@ -23,7 +23,6 @@ import { NoOpExecution } from "./NoOpExecution";
 import { PauseExecution } from "./PauseExecution";
 import { QuickChatExecution } from "./QuickChatExecution";
 import { RetreatExecution } from "./RetreatExecution";
-import { SetAirPolicyExecution } from "./SetAirPolicyExecution";
 import { SpawnExecution } from "./SpawnExecution";
 import { TargetPlayerExecution } from "./TargetPlayerExecution";
 import { TransportShipExecution } from "./TransportShipExecution";
@@ -122,8 +121,6 @@ export class Executor {
         return new MarkDisconnectedExecution(player, intent.isDisconnected);
       case "toggle_pause":
         return new PauseExecution(player, intent.paused);
-      case "set_air_policy":
-        return new SetAirPolicyExecution(player, intent);
       default:
         throw new Error(`intent type ${intent} not found`);
     }

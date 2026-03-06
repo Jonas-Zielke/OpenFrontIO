@@ -3,12 +3,8 @@ import { Theme } from "../../core/configuration/Config";
 import { TrainType, UnitType } from "../../core/game/Game";
 import { UnitView } from "../../core/game/GameView";
 import atomBombSprite from "/sprites/atombomb.png?url";
-import bomberSprite from "/sprites/bomber.png?url";
-import cargoPlaneSprite from "/sprites/cargoplane.png?url";
 import hydrogenBombSprite from "/sprites/hydrogenbomb.png?url";
-import interceptorSprite from "/sprites/interceptor.png?url";
 import mirvSprite from "/sprites/mirv2.png?url";
-import multiFighterSprite from "/sprites/multifighter.png?url";
 import samMissileSprite from "/sprites/samMissile.png?url";
 import tradeShipSprite from "/sprites/tradeship.png?url";
 import trainCarriageSprite from "/sprites/trainCarriage.png?url";
@@ -31,10 +27,6 @@ const SPRITE_CONFIG: Partial<Record<UnitType | TrainTypeSprite, string>> = {
   [UnitType.Warship]: warshipSprite,
   [UnitType.Submarine]: transportShipSprite,
   [UnitType.NuclearSubmarine]: warshipSprite,
-  [UnitType.CargoPlane]: cargoPlaneSprite,
-  [UnitType.Interceptor]: interceptorSprite,
-  [UnitType.MultiFighter]: multiFighterSprite,
-  [UnitType.Bomber]: bomberSprite,
   [UnitType.SAMMissile]: samMissileSprite,
   [UnitType.AtomBomb]: atomBombSprite,
   [UnitType.HydrogenBomb]: hydrogenBombSprite,

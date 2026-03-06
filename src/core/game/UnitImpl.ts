@@ -74,13 +74,7 @@ export class UnitImpl implements Unit {
       case UnitType.Warship:
       case UnitType.Submarine:
       case UnitType.NuclearSubmarine:
-      case UnitType.Interceptor:
-      case UnitType.MultiFighter:
-      case UnitType.Bomber:
-      case UnitType.CargoPlane:
       case UnitType.Port:
-      case UnitType.Airport:
-      case UnitType.MilitaryAirport:
       case UnitType.MissileSilo:
       case UnitType.DefensePost:
       case UnitType.SAMLauncher:
@@ -103,10 +97,7 @@ export class UnitImpl implements Unit {
   }
 
   setPatrolTile(tile: TileRef): void {
-    if (this._patrolTile !== tile) {
-      this._patrolTile = tile;
-      this.mg.addUpdate(this.toUpdate());
-    }
+    this._patrolTile = tile;
   }
 
   patrolTile(): TileRef | undefined {
@@ -150,7 +141,6 @@ export class UnitImpl implements Unit {
       underConstruction: this._underConstruction,
       targetUnitId: this._targetUnit?.id() ?? undefined,
       targetTile: this.targetTile() ?? undefined,
-      patrolTile: this.patrolTile() ?? undefined,
       missileTimerQueue: this._missileTimerQueue,
       level: this.level(),
       hasTrainStation: this._hasTrainStation,
@@ -205,13 +195,7 @@ export class UnitImpl implements Unit {
       case UnitType.Warship:
       case UnitType.Submarine:
       case UnitType.NuclearSubmarine:
-      case UnitType.Interceptor:
-      case UnitType.MultiFighter:
-      case UnitType.Bomber:
-      case UnitType.CargoPlane:
       case UnitType.Port:
-      case UnitType.Airport:
-      case UnitType.MilitaryAirport:
       case UnitType.MissileSilo:
       case UnitType.DefensePost:
       case UnitType.SAMLauncher:
@@ -315,12 +299,6 @@ export class UnitImpl implements Unit {
         case UnitType.Warship:
         case UnitType.Submarine:
         case UnitType.NuclearSubmarine:
-        case UnitType.Interceptor:
-        case UnitType.MultiFighter:
-        case UnitType.Bomber:
-        case UnitType.CargoPlane:
-        case UnitType.Airport:
-        case UnitType.MilitaryAirport:
         case UnitType.Factory:
           this.mg.stats().unitDestroy(destroyer, this._type);
           this.mg.stats().unitLose(this.owner(), this._type);

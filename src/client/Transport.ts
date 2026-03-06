@@ -174,28 +174,6 @@ export class SendUpdateGameConfigIntentEvent implements GameEvent {
   constructor(public readonly config: Partial<GameConfig>) {}
 }
 
-export class SendSetAirPolicyIntentEvent implements GameEvent {
-  constructor(
-    public readonly tradePermissions: {
-      friends: boolean;
-      normal: boolean;
-      enemies: boolean;
-    },
-    public readonly interceptPermissions: {
-      friends: boolean;
-      normal: boolean;
-      enemies: boolean;
-    },
-    public readonly interceptNationSmallIds: number[],
-    public readonly interceptAreas: {
-      north: boolean;
-      south: boolean;
-      west: boolean;
-      east: boolean;
-    },
-  ) {}
-}
-
 export class Transport {
   private socket: WebSocket | null = null;
 
@@ -284,10 +262,6 @@ export class Transport {
 
     this.eventBus.on(SendUpdateGameConfigIntentEvent, (e) =>
       this.onSendUpdateGameConfigIntent(e),
-    );
-
-    this.eventBus.on(SendSetAirPolicyIntentEvent, (e) =>
-      this.onSendSetAirPolicyIntent(e),
     );
   }
 
@@ -665,16 +639,6 @@ export class Transport {
     this.sendIntent({
       type: "update_game_config",
       config: event.config,
-    });
-  }
-
-  private onSendSetAirPolicyIntent(event: SendSetAirPolicyIntentEvent) {
-    this.sendIntent({
-      type: "set_air_policy",
-      tradePermissions: event.tradePermissions,
-      interceptPermissions: event.interceptPermissions,
-      interceptNationSmallIds: event.interceptNationSmallIds,
-      interceptAreas: event.interceptAreas,
     });
   }
 

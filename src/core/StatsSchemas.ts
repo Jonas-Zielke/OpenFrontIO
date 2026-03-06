@@ -31,13 +31,7 @@ export const otherUnits = [
   "city",
   "defp",
   "port",
-  "airp",
-  "mair",
   "wshp",
-  "intr",
-  "mfgt",
-  "bomb",
-  "carg",
   "silo",
   "saml",
   "saml4",
@@ -52,15 +46,9 @@ export type OtherUnitType =
   | UnitType.DefensePost
   | UnitType.MissileSilo
   | UnitType.Port
-  | UnitType.Airport
-  | UnitType.MilitaryAirport
   | UnitType.SAMLauncher
   | UnitType.LongRangeSAMLauncher
   | UnitType.Warship
-  | UnitType.Interceptor
-  | UnitType.MultiFighter
-  | UnitType.Bomber
-  | UnitType.CargoPlane
   | UnitType.Factory
   | UnitType.NuclearSubmarine
   | UnitType.Submarine;
@@ -70,15 +58,9 @@ export const unitTypeToOtherUnit = {
   [UnitType.DefensePost]: "defp",
   [UnitType.MissileSilo]: "silo",
   [UnitType.Port]: "port",
-  [UnitType.Airport]: "airp",
-  [UnitType.MilitaryAirport]: "mair",
   [UnitType.SAMLauncher]: "saml",
   [UnitType.LongRangeSAMLauncher]: "saml4",
   [UnitType.Warship]: "wshp",
-  [UnitType.Interceptor]: "intr",
-  [UnitType.MultiFighter]: "mfgt",
-  [UnitType.Bomber]: "bomb",
-  [UnitType.CargoPlane]: "carg",
   [UnitType.Factory]: "fact",
   [UnitType.NuclearSubmarine]: "subn",
   [UnitType.Submarine]: "subh",

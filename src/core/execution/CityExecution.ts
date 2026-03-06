@@ -1,4 +1,4 @@
-import { Execution, Game, TradeAirports, Unit } from "../game/Game";
+import { Execution, Game, Unit, UnitType } from "../game/Game";
 import { TrainStationExecution } from "./TrainStationExecution";
 
 export class CityExecution implements Execution {
@@ -32,12 +32,10 @@ export class CityExecution implements Execution {
   }
 
   private createStation(): void {
-    const nearbyFactory = TradeAirports.types.some((type) =>
-      this.mg.hasUnitNearby(
-        this.city.tile()!,
-        this.mg.config().trainStationMaxRange(),
-        type,
-      ),
+    const nearbyFactory = this.mg.hasUnitNearby(
+      this.city.tile()!,
+      this.mg.config().trainStationMaxRange(),
+      UnitType.Factory,
     );
     if (nearbyFactory) {
       this.mg.addExecution(new TrainStationExecution(this.city));

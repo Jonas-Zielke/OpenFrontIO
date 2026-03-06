@@ -1,7 +1,5 @@
 import { Execution, Game, Player, Tick, Unit, UnitType } from "../game/Game";
 import { TileRef } from "../game/GameMap";
-import { AircraftExecution } from "./AircraftExecution";
-import { AirportExecution } from "./AirportExecution";
 import { CityExecution } from "./CityExecution";
 import { DefensePostExecution } from "./DefensePostExecution";
 import { FactoryExecution } from "./FactoryExecution";
@@ -145,42 +143,8 @@ export class ConstructionExecution implements Execution {
           }),
         );
         break;
-      case UnitType.Interceptor:
-        this.mg.addExecution(
-          new AircraftExecution({
-            owner: player,
-            patrolTile: this.tile,
-            aircraftType: UnitType.Interceptor,
-          }),
-        );
-        break;
-      case UnitType.MultiFighter:
-        this.mg.addExecution(
-          new AircraftExecution({
-            owner: player,
-            patrolTile: this.tile,
-            aircraftType: UnitType.MultiFighter,
-          }),
-        );
-        break;
-      case UnitType.Bomber:
-        this.mg.addExecution(
-          new AircraftExecution({
-            owner: player,
-            patrolTile: this.tile,
-            aircraftType: UnitType.Bomber,
-          }),
-        );
-        break;
       case UnitType.Port:
         this.mg.addExecution(new PortExecution(this.structure!));
-        break;
-      case UnitType.Airport:
-        this.mg.addExecution(new FactoryExecution(this.structure!));
-        this.mg.addExecution(new AirportExecution(this.structure!));
-        break;
-      case UnitType.MilitaryAirport:
-        // Military airport does not perform economic trade logic.
         break;
       case UnitType.MissileSilo:
         this.mg.addExecution(new MissileSiloExecution(this.structure!));
@@ -221,13 +185,7 @@ export class ConstructionExecution implements Execution {
       case UnitType.LongRangeSAMLauncher:
       case UnitType.City:
       case UnitType.Factory:
-      case UnitType.Airport:
-      case UnitType.MilitaryAirport:
         return true;
-      case UnitType.CargoPlane:
-      case UnitType.Interceptor:
-      case UnitType.MultiFighter:
-      case UnitType.Bomber:
       case UnitType.Submarine:
       case UnitType.NuclearSubmarine:
       case UnitType.Warship:

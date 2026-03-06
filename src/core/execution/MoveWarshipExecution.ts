@@ -1,4 +1,4 @@
-import { CommandablePatrolUnits, Execution, Game, Player } from "../game/Game";
+import { Execution, Game, NavalUnits, Player } from "../game/Game";
 import { TileRef } from "../game/GameMap";
 
 export class MoveWarshipExecution implements Execution {
@@ -13,20 +13,19 @@ export class MoveWarshipExecution implements Execution {
       console.warn(`MoveWarshipExecution: position ${this.position} not valid`);
       return;
     }
-    const patrolUnit = this.owner
-      .units(...CommandablePatrolUnits.types)
+    const navalUnit = this.owner
+      .units(...NavalUnits.types)
       .find((u) => u.id() === this.unitId);
-    if (!patrolUnit) {
-      console.warn("MoveWarshipExecution: patrol unit not found");
+    if (!navalUnit) {
+      console.warn("MoveWarshipExecution: naval unit not found");
       return;
     }
-    if (!patrolUnit.isActive()) {
-      console.warn("MoveWarshipExecution: patrol unit is not active");
+    if (!navalUnit.isActive()) {
+      console.warn("MoveWarshipExecution: naval unit is not active");
       return;
     }
-    patrolUnit.setPatrolTile(this.position);
-    // Move immediately to the commanded tile, then continue patrolling there.
-    patrolUnit.setTargetTile(this.position);
+    navalUnit.setPatrolTile(this.position);
+    navalUnit.setTargetTile(undefined);
   }
 
   tick(ticks: number): void {}
