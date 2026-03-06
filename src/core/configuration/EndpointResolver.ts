@@ -2,6 +2,31 @@ function trimTrailingSlash(value: string): string {
   return value.replace(/\/+$/, "");
 }
 
+interface RuntimeLocation {
+  protocol: string;
+  host: string;
+  hostname: string;
+}
+
+function getRuntimeLocation(): RuntimeLocation | null {
+  const locationLike = (
+    globalThis as { location?: Partial<RuntimeLocation> | undefined }
+  ).location;
+  if (
+    !locationLike ||
+    typeof locationLike.protocol !== "string" ||
+    typeof locationLike.host !== "string" ||
+    typeof locationLike.hostname !== "string"
+  ) {
+    return null;
+  }
+  return {
+    protocol: locationLike.protocol,
+    host: locationLike.host,
+    hostname: locationLike.hostname,
+  };
+}
+
 function ensureLeadingSlash(path: string): string {
   return path.startsWith("/") ? path : `/${path}`;
 }
@@ -13,8 +38,8 @@ function normalizeWorkerPath(workerPath: string): string {
 function normalizeOrigin(value: string, target: "http" | "ws"): string {
   const trimmed = trimTrailingSlash(value.trim());
   const hasProtocol = /^[a-z]+:\/\//i.test(trimmed);
-  const isHttpsPage =
-    typeof window !== "undefined" && window.location.protocol === "https:";
+  const location = getRuntimeLocation();
+  const isHttpsPage = location?.protocol === "https:";
   const prefixed = hasProtocol
     ? trimmed
     : `${target === "http"
@@ -63,10 +88,11 @@ function isLocalhost(hostname: string): boolean {
 }
 
 export function getAudience(): string {
-  if (typeof window === "undefined") {
+  const location = getRuntimeLocation();
+  if (!location) {
     return "localhost";
   }
-  return deriveAudienceFromHostname(window.location.hostname);
+  return deriveAudienceFromHostname(location.hostname);
 }
 
 export function getApiOrigin(): string {
@@ -75,12 +101,16 @@ export function getApiOrigin(): string {
     return normalizeOrigin(configuredApiDomain, "http");
   }
 
-  if (typeof window === "undefined") {
+  const location = getRuntimeLocation();
+  if (!location) {
     return "http://localhost:8787";
   }
 
-  if (isLocalhost(window.location.hostname)) {
-    const localApiHost = localStorage.getItem("apiHost");
+  if (isLocalhost(location.hostname)) {
+    const localApiHost =
+      typeof localStorage !== "undefined"
+        ? localStorage.getItem("apiHost")
+        : null;
     if (localApiHost) {
       return normalizeOrigin(localApiHost, "http");
     }
@@ -88,7 +118,7 @@ export function getApiOrigin(): string {
   }
 
   // In self-hosted deployments (Render, Docker, etc.), API is usually same-origin.
-  return `${window.location.protocol}//${window.location.host}`;
+  return `${location.protocol}//${location.host}`;
 }
 
 export function getApiUrl(path: string): string {
@@ -106,12 +136,13 @@ export function getWebSocketOrigin(): string {
     return normalizeOrigin(configuredApiDomain, "ws");
   }
 
-  if (typeof window === "undefined") {
+  const location = getRuntimeLocation();
+  if (!location) {
     return "ws://localhost:8787";
   }
 
-  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  return `${protocol}//${window.location.host}`;
+  const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+  return `${protocol}//${location.host}`;
 }
 
 export function getWebSocketUrl(path: string): string {
