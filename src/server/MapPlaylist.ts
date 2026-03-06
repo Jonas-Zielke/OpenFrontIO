@@ -323,6 +323,8 @@ export class MapPlaylist {
       maxTimerValue: undefined,
       instantBuild: false,
       randomSpawn: isRandomSpawn,
+      goldMultiplier: 4,
+      troopMultiplier: 4,
       nations,
       gameMode: mode,
       playerTeams,

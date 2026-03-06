@@ -8,6 +8,7 @@ import { MissileSiloExecution } from "./MissileSiloExecution";
 import { NukeExecution } from "./NukeExecution";
 import { PortExecution } from "./PortExecution";
 import { SAMLauncherExecution } from "./SAMLauncherExecution";
+import { SubmarineExecution } from "./SubmarineExecution";
 import { WarshipExecution } from "./WarshipExecution";
 
 export class ConstructionExecution implements Execution {
@@ -124,6 +125,24 @@ export class ConstructionExecution implements Execution {
           new WarshipExecution({ owner: player, patrolTile: this.tile }),
         );
         break;
+      case UnitType.Submarine:
+        this.mg.addExecution(
+          new SubmarineExecution({
+            owner: player,
+            patrolTile: this.tile,
+            submarineType: UnitType.Submarine,
+          }),
+        );
+        break;
+      case UnitType.NuclearSubmarine:
+        this.mg.addExecution(
+          new SubmarineExecution({
+            owner: player,
+            patrolTile: this.tile,
+            submarineType: UnitType.NuclearSubmarine,
+          }),
+        );
+        break;
       case UnitType.Port:
         this.mg.addExecution(new PortExecution(this.structure!));
         break;
@@ -134,6 +153,11 @@ export class ConstructionExecution implements Execution {
         this.mg.addExecution(new DefensePostExecution(this.structure!));
         break;
       case UnitType.SAMLauncher:
+        this.mg.addExecution(
+          new SAMLauncherExecution(player, null, this.structure!),
+        );
+        break;
+      case UnitType.LongRangeSAMLauncher:
         this.mg.addExecution(
           new SAMLauncherExecution(player, null, this.structure!),
         );
@@ -158,9 +182,17 @@ export class ConstructionExecution implements Execution {
       case UnitType.MissileSilo:
       case UnitType.DefensePost:
       case UnitType.SAMLauncher:
+      case UnitType.LongRangeSAMLauncher:
       case UnitType.City:
       case UnitType.Factory:
         return true;
+      case UnitType.Submarine:
+      case UnitType.NuclearSubmarine:
+      case UnitType.Warship:
+      case UnitType.AtomBomb:
+      case UnitType.HydrogenBomb:
+      case UnitType.MIRV:
+        return false;
       default:
         return false;
     }

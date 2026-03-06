@@ -511,7 +511,10 @@ export class StructureIconsLayer implements Layer {
   private resolveGhostRangeLevel(
     buildableUnit: BuildableUnit,
   ): number | undefined {
-    if (buildableUnit.type !== UnitType.SAMLauncher) {
+    if (
+      buildableUnit.type !== UnitType.SAMLauncher &&
+      buildableUnit.type !== UnitType.LongRangeSAMLauncher
+    ) {
       return undefined;
     }
     if (buildableUnit.canUpgrade !== false) {

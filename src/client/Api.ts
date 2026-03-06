@@ -1,4 +1,3 @@
-import { z } from "zod";
 import {
   ClanLeaderboardResponse,
   ClanLeaderboardResponseSchema,
@@ -7,10 +6,13 @@ import {
   RankedLeaderboardResponse,
   RankedLeaderboardResponseSchema,
   UserMeResponse,
-  UserMeResponseSchema,
 } from "../core/ApiSchemas";
 import { AnalyticsRecord, AnalyticsRecordSchema } from "../core/Schemas";
-import { getAuthHeader, logOut, userAuth } from "./Auth";
+import {
+  getApiOrigin,
+  getAudience as getAudienceFromResolver,
+} from "../core/configuration/EndpointResolver";
+import { getAuthHeader, userAuth } from "./Auth";
 
 export async function fetchPlayerById(
   playerId: string,
@@ -52,41 +54,8 @@ export async function fetchPlayerById(
   }
 }
 
-let __userMe: Promise<UserMeResponse | false> | null = null;
 export async function getUserMe(): Promise<UserMeResponse | false> {
-  if (__userMe !== null) {
-    return __userMe;
-  }
-  __userMe = (async () => {
-    try {
-      const userAuthResult = await userAuth();
-      if (!userAuthResult) return false;
-      const { jwt } = userAuthResult;
-
-      // Get the user object
-      const response = await fetch(getApiBase() + "/users/@me", {
-        headers: {
-          authorization: `Bearer ${jwt}`,
-        },
-      });
-      if (response.status === 401) {
-        await logOut();
-        return false;
-      }
-      if (response.status !== 200) return false;
-      const body = await response.json();
-      const result = UserMeResponseSchema.safeParse(body);
-      if (!result.success) {
-        const error = z.prettifyError(result.error);
-        console.error("Invalid response", error);
-        return false;
-      }
-      return result.data;
-    } catch (e) {
-      return false;
-    }
-  })();
-  return __userMe;
+  return false;
 }
 
 export async function createCheckoutSession(
@@ -126,23 +95,11 @@ export async function createCheckoutSession(
 }
 
 export function getApiBase() {
-  const domainname = getAudience();
-
-  if (domainname === "localhost") {
-    const apiDomain = process?.env?.API_DOMAIN;
-    if (apiDomain) {
-      return `https://${apiDomain}`;
-    }
-    return localStorage.getItem("apiHost") ?? "http://localhost:8787";
-  }
-
-  return `https://api.${domainname}`;
+  return getApiOrigin();
 }
 
 export function getAudience() {
-  const { hostname } = new URL(window.location.href);
-  const domainname = hostname.split(".").slice(-2).join(".");
-  return domainname;
+  return getAudienceFromResolver();
 }
 
 // Check if the user's account is linked to a Discord or email account.

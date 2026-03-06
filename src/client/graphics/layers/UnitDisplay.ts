@@ -27,6 +27,7 @@ import atomBombIcon from "/images/NukeIconWhite.svg?url";
 import portIcon from "/images/PortIcon.svg?url";
 import samLauncherIcon from "/images/SamLauncherIconWhite.svg?url";
 import defensePostIcon from "/images/ShieldIconWhite.svg?url";
+import boatIcon from "/images/BoatIconWhite.svg?url";
 
 @customElement("unit-display")
 export class UnitDisplay extends LitElement implements Layer {
@@ -40,6 +41,8 @@ export class UnitDisplay extends LitElement implements Layer {
   private _factories = 0;
   private _missileSilo = 0;
   private _port = 0;
+  private _submarines = 0;
+  private _nuclearSubmarines = 0;
   private _defensePost = 0;
   private _samLauncher = 0;
   private allDisabled = false;
@@ -80,12 +83,19 @@ export class UnitDisplay extends LitElement implements Layer {
     switch (item) {
       case UnitType.AtomBomb:
       case UnitType.HydrogenBomb:
+        return (
+          this.cost(item) <= (player?.gold() ?? 0n) &&
+          ((player?.units(UnitType.MissileSilo).length ?? 0) > 0 ||
+            (player?.units(UnitType.NuclearSubmarine).length ?? 0) > 0)
+        );
       case UnitType.MIRV:
         return (
           this.cost(item) <= (player?.gold() ?? 0n) &&
           (player?.units(UnitType.MissileSilo).length ?? 0) > 0
         );
       case UnitType.Warship:
+      case UnitType.Submarine:
+      case UnitType.NuclearSubmarine:
         return (
           this.cost(item) <= (player?.gold() ?? 0n) &&
           (player?.units(UnitType.Port).length ?? 0) > 0
@@ -104,8 +114,12 @@ export class UnitDisplay extends LitElement implements Layer {
     this._cities = player.totalUnitLevels(UnitType.City);
     this._missileSilo = player.totalUnitLevels(UnitType.MissileSilo);
     this._port = player.totalUnitLevels(UnitType.Port);
+    this._submarines = player.totalUnitLevels(UnitType.Submarine);
+    this._nuclearSubmarines = player.totalUnitLevels(UnitType.NuclearSubmarine);
     this._defensePost = player.totalUnitLevels(UnitType.DefensePost);
-    this._samLauncher = player.totalUnitLevels(UnitType.SAMLauncher);
+    this._samLauncher =
+      player.totalUnitLevels(UnitType.SAMLauncher) +
+      player.totalUnitLevels(UnitType.LongRangeSAMLauncher);
     this._factories = player.totalUnitLevels(UnitType.Factory);
     this._warships = player.totalUnitLevels(UnitType.Warship);
     this.requestUpdate();
@@ -185,6 +199,20 @@ export class UnitDisplay extends LitElement implements Layer {
               this.keybinds["buildWarship"]?.key ?? "7",
             )}
             ${this.renderUnitItem(
+              boatIcon,
+              this._submarines,
+              UnitType.Submarine,
+              "submarine",
+              "",
+            )}
+            ${this.renderUnitItem(
+              warshipIcon,
+              this._nuclearSubmarines,
+              UnitType.NuclearSubmarine,
+              "nuclear_submarine",
+              "",
+            )}
+            ${this.renderUnitItem(
               atomBombIcon,
               null,
               UnitType.AtomBomb,
@@ -227,6 +255,7 @@ export class UnitDisplay extends LitElement implements Layer {
       .replace("Digit", "")
       .replace("Key", "")
       .toUpperCase();
+    const showHotkey = displayHotkey.length > 0;
 
     return html`
       <div
@@ -248,7 +277,7 @@ export class UnitDisplay extends LitElement implements Layer {
                 <div class="font-bold text-sm mb-1">
                   ${translateText(
                     "unit_type." + structureKey,
-                  )}${` [${displayHotkey}]`}
+                  )}${showHotkey ? ` [${displayHotkey}]` : ""}
                 </div>
                 <div class="p-2">
                   ${translateText("build_menu.desc." + structureKey)}
@@ -285,11 +314,15 @@ export class UnitDisplay extends LitElement implements Layer {
                 this.eventBus?.emit(
                   new ToggleStructureEvent([
                     UnitType.MissileSilo,
+                    UnitType.NuclearSubmarine,
                     UnitType.SAMLauncher,
+                    UnitType.LongRangeSAMLauncher,
                   ]),
                 );
                 break;
               case UnitType.Warship:
+              case UnitType.Submarine:
+              case UnitType.NuclearSubmarine:
                 this.eventBus?.emit(new ToggleStructureEvent([UnitType.Port]));
                 break;
               default:
@@ -299,9 +332,11 @@ export class UnitDisplay extends LitElement implements Layer {
           @mouseleave=${() =>
             this.eventBus?.emit(new ToggleStructureEvent(null))}
         >
-          ${html`<div class="ml-1 text-xs relative -top-1.5 text-gray-400">
-            ${displayHotkey}
-          </div>`}
+          ${showHotkey
+            ? html`<div class="ml-1 text-xs relative -top-1.5 text-gray-400">
+                ${displayHotkey}
+              </div>`
+            : html``}
           <div class="flex items-center gap-1 pt-1">
             <img src=${icon} alt=${structureKey} class="align-middle size-6" />
             ${number !== null ? renderNumber(number) : null}

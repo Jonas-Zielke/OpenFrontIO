@@ -113,6 +113,24 @@ To connect to production api servers:
 npm run dev:prod
 ```
 
+## ▲ Vercel Deployment (Frontend)
+
+This repository can be deployed to Vercel as a static frontend, while the game backend (API + workers + websockets) runs separately.
+
+1. Import the repo into Vercel.
+1. Keep the default build from [`vercel.json`](vercel.json):
+   - `installCommand`: `npm run inst`
+   - `buildCommand`: `npm run build-prod`
+   - `outputDirectory`: `static`
+1. Set project environment variables:
+   - `API_DOMAIN` (required): backend host, for example `api.openfront.io` or `https://api.example.com`
+   - `WEBSOCKET_URL` (optional): websocket host if different from `API_DOMAIN`, for example `wss://ws.example.com`
+1. Deploy.
+
+Notes:
+- `vercel.json` includes SPA fallback routing to `index.html` so lobby/game URLs like `/w3/game/ABCD1234` work when opened directly.
+- If `API_DOMAIN` is not set, production defaults to `https://api.<current-domain>`.
+
 ## 🛠️ Development Tools
 
 - **Format code**:

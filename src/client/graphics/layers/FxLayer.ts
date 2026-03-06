@@ -72,6 +72,8 @@ export class FxLayer implements Layer {
         break;
       }
       case UnitType.Warship:
+      case UnitType.Submarine:
+      case UnitType.NuclearSubmarine:
         this.onWarshipEvent(unit);
         break;
       case UnitType.Shell:
@@ -85,6 +87,7 @@ export class FxLayer implements Layer {
       case UnitType.Port:
       case UnitType.MissileSilo:
       case UnitType.SAMLauncher:
+      case UnitType.LongRangeSAMLauncher:
       case UnitType.Factory:
         this.onStructureEvent(unit);
         break;

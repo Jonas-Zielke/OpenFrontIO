@@ -1,4 +1,4 @@
-import { Execution, Game, Player, UnitType } from "../game/Game";
+import { Execution, Game, NavalUnits, Player } from "../game/Game";
 import { TileRef } from "../game/GameMap";
 
 export class MoveWarshipExecution implements Execution {
@@ -13,19 +13,19 @@ export class MoveWarshipExecution implements Execution {
       console.warn(`MoveWarshipExecution: position ${this.position} not valid`);
       return;
     }
-    const warship = this.owner
-      .units(UnitType.Warship)
+    const navalUnit = this.owner
+      .units(...NavalUnits.types)
       .find((u) => u.id() === this.unitId);
-    if (!warship) {
-      console.warn("MoveWarshipExecution: warship not found");
+    if (!navalUnit) {
+      console.warn("MoveWarshipExecution: naval unit not found");
       return;
     }
-    if (!warship.isActive()) {
-      console.warn("MoveWarshipExecution: warship is not active");
+    if (!navalUnit.isActive()) {
+      console.warn("MoveWarshipExecution: naval unit is not active");
       return;
     }
-    warship.setPatrolTile(this.position);
-    warship.setTargetTile(undefined);
+    navalUnit.setPatrolTile(this.position);
+    navalUnit.setTargetTile(undefined);
   }
 
   tick(ticks: number): void {}

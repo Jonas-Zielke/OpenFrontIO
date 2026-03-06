@@ -258,6 +258,9 @@ export class DefaultConfig implements Config {
   goldMultiplier(): number {
     return this._gameConfig.goldMultiplier ?? 1;
   }
+  troopMultiplier(): number {
+    return this._gameConfig.troopMultiplier ?? 1;
+  }
   startingGold(playerInfo: PlayerInfo): Gold {
     if (playerInfo.playerType === PlayerType.Bot) {
       return 0n;
@@ -345,6 +348,18 @@ export class DefaultConfig implements Config {
           maxHealth: 1000,
         };
         break;
+      case UnitType.Submarine:
+        info = {
+          cost: this.costWrapper(() => 300_000, UnitType.Submarine),
+          maxHealth: 900,
+        };
+        break;
+      case UnitType.NuclearSubmarine:
+        info = {
+          cost: this.costWrapper(() => 750_000, UnitType.NuclearSubmarine),
+          maxHealth: 1100,
+        };
+        break;
       case UnitType.Shell:
         info = {
           cost: () => 0n,
@@ -420,6 +435,17 @@ export class DefaultConfig implements Config {
             (numUnits: number) =>
               Math.min(3_000_000, (numUnits + 1) * 1_500_000),
             UnitType.SAMLauncher,
+          ),
+          constructionDuration: this.instantBuild() ? 0 : 30 * 10,
+          upgradable: true,
+        };
+        break;
+      case UnitType.LongRangeSAMLauncher:
+        info = {
+          cost: this.costWrapper(
+            (numUnits: number) =>
+              Math.min(3_000_000, (numUnits + 1) * 1_500_000),
+            UnitType.LongRangeSAMLauncher,
           ),
           constructionDuration: this.instantBuild() ? 0 : 30 * 10,
           upgradable: true,
@@ -721,27 +747,29 @@ export class DefaultConfig implements Config {
   }
 
   startManpower(playerInfo: PlayerInfo): number {
+    const multiplier = this.troopMultiplier();
     if (playerInfo.playerType === PlayerType.Bot) {
-      return 10_000;
+      return Math.floor(10_000 * multiplier);
     }
     if (playerInfo.playerType === PlayerType.Nation) {
       switch (this._gameConfig.difficulty) {
         case Difficulty.Easy:
-          return 12_500;
+          return Math.floor(12_500 * multiplier);
         case Difficulty.Medium:
-          return 18_750;
+          return Math.floor(18_750 * multiplier);
         case Difficulty.Hard:
-          return 25_000; // Like humans
+          return Math.floor(25_000 * multiplier); // Like humans
         case Difficulty.Impossible:
-          return 31_250;
+          return Math.floor(31_250 * multiplier);
         default:
           assertNever(this._gameConfig.difficulty);
       }
     }
-    return this.infiniteTroops() ? 1_000_000 : 25_000;
+    return Math.floor((this.infiniteTroops() ? 1_000_000 : 25_000) * multiplier);
   }
 
   maxTroops(player: Player | PlayerView): number {
+    const multiplier = this.troopMultiplier();
     const maxTroops =
       player.type() === PlayerType.Human && this.infiniteTroops()
         ? 1_000_000_000
@@ -753,22 +781,22 @@ export class DefaultConfig implements Config {
             this.cityTroopIncrease();
 
     if (player.type() === PlayerType.Bot) {
-      return maxTroops / 3;
+      return (maxTroops / 3) * multiplier;
     }
 
     if (player.type() === PlayerType.Human) {
-      return maxTroops;
+      return maxTroops * multiplier;
     }
 
     switch (this._gameConfig.difficulty) {
       case Difficulty.Easy:
-        return maxTroops * 0.5;
+        return maxTroops * 0.5 * multiplier;
       case Difficulty.Medium:
-        return maxTroops * 0.75;
+        return maxTroops * 0.75 * multiplier;
       case Difficulty.Hard:
-        return maxTroops * 1; // Like humans
+        return maxTroops * multiplier; // Like humans
       case Difficulty.Impossible:
-        return maxTroops * 1.25;
+        return maxTroops * 1.25 * multiplier;
       default:
         assertNever(this._gameConfig.difficulty);
     }
@@ -776,6 +804,7 @@ export class DefaultConfig implements Config {
 
   troopIncreaseRate(player: Player): number {
     const max = this.maxTroops(player);
+    const multiplier = this.troopMultiplier();
 
     let toAdd = 10 + Math.pow(player.troops(), 0.73) / 4;
 
@@ -804,6 +833,8 @@ export class DefaultConfig implements Config {
           assertNever(this._gameConfig.difficulty);
       }
     }
+
+    toAdd *= multiplier;
 
     return Math.min(player.troops() + toAdd, max) - player.troops();
   }
@@ -850,6 +881,10 @@ export class DefaultConfig implements Config {
   samRange(level: number): number {
     // rational growth function (level 1 = 70, level 5 just above hydro range, asymptotically approaches 150)
     return this.maxSamRange() - 480 / (level + 5);
+  }
+
+  longRangeSamRange(level: number): number {
+    return this.samRange(level) * 4;
   }
 
   maxSamRange(): number {

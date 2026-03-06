@@ -25,6 +25,7 @@ import {
   ServerMessageSchema,
   Winner,
 } from "../core/Schemas";
+import { getWorkerWebSocketUrl } from "../core/configuration/EndpointResolver";
 import { replacer } from "../core/Util";
 import { getPlayToken } from "./Auth";
 import { LobbyConfig } from "./ClientGameRunner";
@@ -324,12 +325,10 @@ export class Transport {
   ) {
     this.startPing();
     this.killExistingSocket();
-    const wsHost = window.location.host;
-    const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const workerPath = this.lobbyConfig.serverConfig.workerPath(
       this.lobbyConfig.gameID,
     );
-    this.socket = new WebSocket(`${wsProtocol}//${wsHost}/${workerPath}`);
+    this.socket = new WebSocket(getWorkerWebSocketUrl(workerPath));
     this.onconnect = onconnect;
     this.onmessage = onmessage;
     this.socket.onopen = () => {

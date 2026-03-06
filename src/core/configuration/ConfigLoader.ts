@@ -3,6 +3,7 @@ import { GameConfig } from "../Schemas";
 import { Config, GameEnv, ServerConfig } from "./Config";
 import { DefaultConfig } from "./DefaultConfig";
 import { DevConfig, DevServerConfig } from "./DevConfig";
+import { getApiUrl } from "./EndpointResolver";
 import { Env } from "./Env";
 import { preprodConfig } from "./PreprodConfig";
 import { prodConfig } from "./ProdConfig";
@@ -30,7 +31,7 @@ export async function getServerConfigFromClient(): Promise<ServerConfig> {
   if (cachedSC) {
     return cachedSC;
   }
-  const response = await fetch("/api/env");
+  const response = await fetch(getApiUrl("/api/env"));
 
   if (!response.ok) {
     throw new Error(

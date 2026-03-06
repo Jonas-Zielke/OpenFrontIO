@@ -2,6 +2,7 @@ import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { translateText } from "../client/Utils";
 import { getServerConfigFromClient } from "../core/configuration/ConfigLoader";
+import { getWorkerApiUrl } from "../core/configuration/EndpointResolver";
 import { EventBus } from "../core/EventBus";
 import {
   Difficulty,
@@ -28,6 +29,11 @@ import "./components/LobbyPlayerView";
 import "./components/ToggleInputCard";
 import { modalHeader } from "./components/ui/ModalHeader";
 import { crazyGamesSDK } from "./CrazyGamesSDK";
+import {
+  MenuGameModePreset,
+  loadMenuGameModePreset,
+  saveMenuGameModePreset,
+} from "./GameModePreset";
 import { JoinLobbyEvent } from "./Main";
 import { terrainMapFileLoader } from "./TerrainMapFileLoader";
 import {
@@ -69,8 +75,11 @@ export class HostLobbyModal extends BaseModal {
   @state() private compactMap: boolean = false;
   @state() private goldMultiplier: boolean = false;
   @state() private goldMultiplierValue: number | undefined = undefined;
+  @state() private troopMultiplier: boolean = false;
+  @state() private troopMultiplierValue: number | undefined = undefined;
   @state() private startingGold: boolean = false;
   @state() private startingGoldValue: number | undefined = undefined;
+  @state() private modePreset: MenuGameModePreset = loadMenuGameModePreset();
   @state() private lobbyId = "";
   @state() private lobbyUrlSuffix = "";
   @state() private clients: ClientInfo[] = [];
@@ -96,6 +105,30 @@ export class HostLobbyModal extends BaseModal {
       this.clients = lobby.clients;
     }
   };
+
+  private setModePreset(preset: MenuGameModePreset): void {
+    this.modePreset = preset;
+    saveMenuGameModePreset(preset);
+    this.applyPresetOptions();
+    if (this.lobbyId) {
+      void this.putGameConfig();
+    }
+  }
+
+  private applyPresetOptions(): void {
+    if (this.modePreset === "fast") {
+      this.goldMultiplier = true;
+      this.goldMultiplierValue = 4;
+      this.troopMultiplier = true;
+      this.troopMultiplierValue = 4;
+      return;
+    }
+
+    this.goldMultiplier = false;
+    this.goldMultiplierValue = undefined;
+    this.troopMultiplier = false;
+    this.troopMultiplierValue = undefined;
+  }
 
   private getRandomString(): string {
     const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -143,6 +176,13 @@ export class HostLobbyModal extends BaseModal {
   }
 
   render() {
+    const modePresetButtonClass = (preset: MenuGameModePreset) =>
+      `h-10 px-4 rounded-xl border text-xs font-black uppercase tracking-widest transition-all ${
+        this.modePreset === preset
+          ? "bg-blue-600 border-blue-400 text-white"
+          : "bg-white/5 border-white/10 text-white/75 hover:text-white hover:bg-white/10"
+      }`;
+
     const inputCards = [
       html`<toggle-input-card
         .labelKey=${"host_modal.max_timer"}
@@ -233,6 +273,23 @@ export class HostLobbyModal extends BaseModal {
         <div
           class="flex-1 overflow-y-auto custom-scrollbar p-6 mr-1 mx-auto w-full max-w-5xl"
         >
+          <div class="mb-6 flex items-center justify-end gap-2">
+            <span class="text-xs font-bold uppercase tracking-widest text-white/60">
+              Mode Preset
+            </span>
+            <button
+              @click=${() => this.setModePreset("normal")}
+              class=${modePresetButtonClass("normal")}
+            >
+              Normal
+            </button>
+            <button
+              @click=${() => this.setModePreset("fast")}
+              class=${modePresetButtonClass("fast")}
+            >
+              Fast X4
+            </button>
+          </div>
           <game-config-settings
             class="block"
             .sectionGapClass=${"space-y-10"}
@@ -357,6 +414,9 @@ export class HostLobbyModal extends BaseModal {
   }
 
   protected onOpen(): void {
+    // Respect latest menu preset even when this modal is opened from outside mode selector.
+    this.modePreset = loadMenuGameModePreset();
+    this.applyPresetOptions();
     this.startLobbyUpdates();
     this.lobbyId = generateID();
     // Note: clientID will be assigned by server when we join the lobby
@@ -451,6 +511,8 @@ export class HostLobbyModal extends BaseModal {
     this.lobbyCreatorClientID = "";
     this.goldMultiplier = false;
     this.goldMultiplierValue = undefined;
+    this.troopMultiplier = false;
+    this.troopMultiplierValue = undefined;
     this.startingGold = false;
     this.startingGoldValue = undefined;
 
@@ -782,6 +844,10 @@ export class HostLobbyModal extends BaseModal {
               this.goldMultiplier === true
                 ? this.goldMultiplierValue
                 : undefined,
+            troopMultiplier:
+              this.troopMultiplier === true
+                ? this.troopMultiplierValue
+                : undefined,
             startingGold:
               this.startingGold === true ? this.startingGoldValue : undefined,
           } satisfies Partial<GameConfig>,
@@ -803,7 +869,10 @@ export class HostLobbyModal extends BaseModal {
 
     const config = await getServerConfigFromClient();
     const response = await fetch(
-      `${window.location.origin}/${config.workerPath(this.lobbyId)}/api/start_game/${this.lobbyId}`,
+      getWorkerApiUrl(
+        config.workerPath(this.lobbyId),
+        `/api/start_game/${this.lobbyId}`,
+      ),
       {
         method: "POST",
         headers: {
@@ -855,7 +924,7 @@ async function createLobby(gameID: string): Promise<GameInfo> {
   const token = await getPlayToken();
   try {
     const response = await fetch(
-      `/${config.workerPath(gameID)}/api/create_game/${gameID}`,
+      getWorkerApiUrl(config.workerPath(gameID), `/api/create_game/${gameID}`),
       {
         method: "POST",
         headers: {

@@ -1,5 +1,5 @@
 import type { EventBus } from "../../../core/EventBus";
-import { UnitType } from "../../../core/game/Game";
+import { SAMLaunchers, UnitType } from "../../../core/game/Game";
 import { GameUpdateType } from "../../../core/game/GameUpdates";
 import type {
   GameView,
@@ -43,6 +43,7 @@ export class SAMRadiusLayer implements Layer {
     this.hoveredShow =
       !!types &&
       (types.indexOf(UnitType.SAMLauncher) !== -1 ||
+        types.indexOf(UnitType.LongRangeSAMLauncher) !== -1 ||
         types.indexOf(UnitType.City) !== -1);
     this.updateVisibility();
   }
@@ -73,7 +74,7 @@ export class SAMRadiusLayer implements Layer {
     if (unitUpdates) {
       for (const update of unitUpdates) {
         const unit = this.game.unit(update.id);
-        if (unit && unit.type() === UnitType.SAMLauncher) {
+        if (unit && SAMLaunchers.has(unit.type())) {
           if (this.hasChanged(unit)) {
             this.needsRedraw = true; // A SAM changed: radiuses shall be recomputed when necessary
             break;
@@ -86,6 +87,7 @@ export class SAMRadiusLayer implements Layer {
     this.ghostShow =
       this.uiState.ghostStructure === UnitType.MissileSilo ||
       this.uiState.ghostStructure === UnitType.SAMLauncher ||
+      this.uiState.ghostStructure === UnitType.LongRangeSAMLauncher ||
       this.uiState.ghostStructure === UnitType.City ||
       this.uiState.ghostStructure === UnitType.AtomBomb ||
       this.uiState.ghostStructure === UnitType.HydrogenBomb;
@@ -132,9 +134,10 @@ export class SAMRadiusLayer implements Layer {
 
   private getAllSamRanges(): SAMRadius[] {
     // Get all active SAM launchers
-    const samLaunchers = this.game
-      .units(UnitType.SAMLauncher)
-      .filter((unit) => unit.isActive());
+    const samLaunchers = [
+      ...this.game.units(UnitType.SAMLauncher),
+      ...this.game.units(UnitType.LongRangeSAMLauncher),
+    ].filter((unit) => unit.isActive());
 
     // Update our tracking set
     this.samLaunchers.clear();
@@ -151,7 +154,10 @@ export class SAMRadiusLayer implements Layer {
       return {
         x: this.game.x(tile),
         y: this.game.y(tile),
-        r: this.game.config().samRange(sam.level()),
+        r:
+          sam.type() === UnitType.LongRangeSAMLauncher
+            ? this.game.config().longRangeSamRange(sam.level())
+            : this.game.config().samRange(sam.level()),
         owner: sam.owner(),
         arcs: [],
       };

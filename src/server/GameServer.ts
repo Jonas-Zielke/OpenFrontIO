@@ -154,6 +154,9 @@ export class GameServer {
     if (gameConfig.goldMultiplier !== undefined) {
       this.gameConfig.goldMultiplier = gameConfig.goldMultiplier;
     }
+    if (gameConfig.troopMultiplier !== undefined) {
+      this.gameConfig.troopMultiplier = gameConfig.troopMultiplier;
+    }
     if (gameConfig.startingGold !== undefined) {
       this.gameConfig.startingGold = gameConfig.startingGold;
     }

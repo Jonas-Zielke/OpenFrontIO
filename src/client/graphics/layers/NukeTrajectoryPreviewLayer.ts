@@ -278,8 +278,8 @@ export class NukeTrajectoryPreviewLayer implements Layer {
       const tile = this.trajectoryPoints[i];
       for (const sam of this.game.nearbyUnits(
         tile,
-        this.game.config().maxSamRange(),
-        UnitType.SAMLauncher,
+        this.game.config().longRangeSamRange(1),
+        [UnitType.SAMLauncher, UnitType.LongRangeSAMLauncher],
       )) {
         if (
           sam.unit.owner().isMe() ||
@@ -288,9 +288,12 @@ export class NukeTrajectoryPreviewLayer implements Layer {
         ) {
           continue;
         }
+        const samRange =
+          sam.unit.type() === UnitType.LongRangeSAMLauncher
+            ? this.game.config().longRangeSamRange(sam.unit.level())
+            : this.game.config().samRange(sam.unit.level());
         if (
-          sam.distSquared <=
-          this.game.config().samRange(sam.unit.level()) ** 2
+          sam.distSquared <= samRange ** 2
         ) {
           this.targetedIndex = i;
           break;

@@ -19,6 +19,7 @@ import {
   PublicGameInfo,
 } from "../core/Schemas";
 import { getServerConfigFromClient } from "../core/configuration/ConfigLoader";
+import { getWorkerApiUrl } from "../core/configuration/EndpointResolver";
 import { GameMode, GameType, HumansVsNations } from "../core/game/Game";
 import { getApiBase } from "./Api";
 import { crazyGamesSDK } from "./CrazyGamesSDK";
@@ -428,6 +429,14 @@ export class JoinLobbyModal extends BaseModal {
           .label=${translateText("host_modal.mode")}
           .value=${modeName}
         ></lobby-config-item>
+        ${c.goldMultiplier !== undefined || c.troopMultiplier !== undefined
+          ? html`
+              <lobby-config-item
+                .label=${"Resource Boost"}
+                .value=${`Gold x${c.goldMultiplier ?? 1} / Troops x${c.troopMultiplier ?? 1}`}
+              ></lobby-config-item>
+            `
+          : html``}
         ${modifiers.map(
           (m) => html`
             <lobby-config-item
@@ -471,8 +480,11 @@ export class JoinLobbyModal extends BaseModal {
       Port: "unit_type.port",
       "Defense Post": "unit_type.defense_post",
       "SAM Launcher": "unit_type.sam_launcher",
+      "Long Range SAM Launcher": "unit_type.long_range_sam_launcher",
       "Missile Silo": "unit_type.missile_silo",
       Warship: "unit_type.warship",
+      Submarine: "unit_type.submarine",
+      "Nuclear Submarine": "unit_type.nuclear_submarine",
       Factory: "unit_type.factory",
       "Atom Bomb": "unit_type.atom_bomb",
       "Hydrogen Bomb": "unit_type.hydrogen_bomb",
@@ -722,7 +734,10 @@ export class JoinLobbyModal extends BaseModal {
 
   private async checkActiveLobby(lobbyId: string): Promise<boolean> {
     const config = await getServerConfigFromClient();
-    const url = `/${config.workerPath(lobbyId)}/api/game/${lobbyId}/exists`;
+    const url = getWorkerApiUrl(
+      config.workerPath(lobbyId),
+      `/api/game/${lobbyId}/exists`,
+    );
 
     const response = await fetch(url, {
       method: "GET",

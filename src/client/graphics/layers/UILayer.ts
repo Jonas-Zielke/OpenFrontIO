@@ -48,6 +48,15 @@ export class UILayer implements Layer {
   // Visual settings for selection
   private readonly SELECTION_BOX_SIZE = 6; // Size of the selection box (should be larger than the warship)
 
+  private isSelectedNavalUnit(unit: UnitView | null): boolean {
+    return (
+      unit !== null &&
+      (unit.type() === UnitType.Warship ||
+        unit.type() === UnitType.Submarine ||
+        unit.type() === UnitType.NuclearSubmarine)
+    );
+  }
+
   constructor(
     private game: GameView,
     private eventBus: EventBus,
@@ -64,9 +73,9 @@ export class UILayer implements Layer {
     // Update the selection animation time
     this.selectionAnimTime = (this.selectionAnimTime + 1) % 60;
 
-    // If there's a selected warship, redraw to update the selection box animation
-    if (this.selectedUnit && this.selectedUnit.type() === UnitType.Warship) {
-      this.drawSelectionBox(this.selectedUnit);
+    // If there's a selected naval unit, redraw to update the selection box animation.
+    if (this.isSelectedNavalUnit(this.selectedUnit)) {
+      this.drawSelectionBox(this.selectedUnit!);
     }
 
     this.game
@@ -109,16 +118,18 @@ export class UILayer implements Layer {
       return;
     }
     switch (unit.type()) {
-      case UnitType.Warship: {
+      case UnitType.Warship:
+      case UnitType.Submarine:
+      case UnitType.NuclearSubmarine:
         this.drawHealthBar(unit);
         break;
-      }
       case UnitType.City:
       case UnitType.Factory:
       case UnitType.DefensePost:
       case UnitType.Port:
       case UnitType.MissileSilo:
       case UnitType.SAMLauncher:
+      case UnitType.LongRangeSAMLauncher:
         if (
           unit.markedForDeletion() !== false ||
           unit.missileReadinesss() < 1
@@ -158,8 +169,8 @@ export class UILayer implements Layer {
   private onUnitSelection(event: UnitSelectionEvent) {
     if (event.isSelected) {
       this.selectedUnit = event.unit;
-      if (event.unit && event.unit.type() === UnitType.Warship) {
-        this.drawSelectionBox(event.unit);
+      if (this.isSelectedNavalUnit(event.unit)) {
+        this.drawSelectionBox(event.unit!);
       }
     } else {
       if (this.selectedUnit === event.unit) {
@@ -330,6 +341,7 @@ export class UILayer implements Layer {
     switch (unit.type()) {
       case UnitType.MissileSilo:
       case UnitType.SAMLauncher:
+      case UnitType.LongRangeSAMLauncher:
         return !unit.markedForDeletion()
           ? unit.missileReadinesss()
           : this.deletionProgress(this.game, unit);

@@ -20,8 +20,11 @@ export const STRUCTURE_SHAPES: Partial<Record<UnitType, ShapeType>> = {
   [UnitType.Factory]: "circle",
   [UnitType.DefensePost]: "octagon",
   [UnitType.SAMLauncher]: "square",
+  [UnitType.LongRangeSAMLauncher]: "square",
   [UnitType.MissileSilo]: "triangle",
   [UnitType.Warship]: "cross",
+  [UnitType.Submarine]: "cross",
+  [UnitType.NuclearSubmarine]: "cross",
   [UnitType.AtomBomb]: "cross",
   [UnitType.HydrogenBomb]: "cross",
   [UnitType.MIRV]: "cross",
@@ -66,6 +69,7 @@ export class SpriteFactory {
     [UnitType.Port, { iconPath: anchorIcon, image: null }],
     [UnitType.MissileSilo, { iconPath: missileSiloIcon, image: null }],
     [UnitType.SAMLauncher, { iconPath: SAMMissileIcon, image: null }],
+    [UnitType.LongRangeSAMLauncher, { iconPath: SAMMissileIcon, image: null }],
   ]);
   constructor(
     theme: Theme,
@@ -467,6 +471,9 @@ export class SpriteFactory {
     switch (type) {
       case UnitType.SAMLauncher:
         radius = this.game.config().samRange(level ?? 1);
+        break;
+      case UnitType.LongRangeSAMLauncher:
+        radius = this.game.config().longRangeSamRange(level ?? 1);
         break;
       case UnitType.Factory:
         radius = this.game.config().trainStationMaxRange();

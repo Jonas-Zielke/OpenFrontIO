@@ -17,6 +17,11 @@ export class WorkerClient {
   private worker: Worker;
   private isInitialized = false;
   private messageHandlers: Map<string, (message: WorkerMessage) => void>;
+  private readonly workerMessageHandler: (
+    event: MessageEvent<WorkerMessage>,
+  ) => void;
+  private readonly initTimeoutMs = 45_000;
+  private readonly maxInitAttempts = 2;
   private gameUpdateCallback?: (
     update: GameUpdateViewData | ErrorUpdate,
   ) => void;
@@ -25,16 +30,24 @@ export class WorkerClient {
     private gameStartInfo: GameStartInfo,
     private clientID: ClientID,
   ) {
-    this.worker = new Worker(new URL("./Worker.worker.ts", import.meta.url), {
+    this.messageHandlers = new Map();
+    this.workerMessageHandler = this.handleWorkerMessage.bind(this);
+    this.worker = this.createWorker();
+  }
+
+  private createWorker(): Worker {
+    const worker = new Worker(new URL("./Worker.worker.ts", import.meta.url), {
       type: "module",
     });
-    this.messageHandlers = new Map();
+    worker.addEventListener("message", this.workerMessageHandler);
+    return worker;
+  }
 
-    // Set up global message handler
-    this.worker.addEventListener(
-      "message",
-      this.handleWorkerMessage.bind(this),
-    );
+  private resetWorker(): void {
+    this.worker.terminate();
+    this.worker = this.createWorker();
+    this.messageHandlers.clear();
+    this.isInitialized = false;
   }
 
   private handleWorkerMessage(event: MessageEvent<WorkerMessage>) {
@@ -55,6 +68,7 @@ export class WorkerClient {
         break;
 
       case "initialized":
+      case "init_failed":
       default:
         if (message.id && this.messageHandlers.has(message.id)) {
           const handler = this.messageHandlers.get(message.id)!;
@@ -65,14 +79,56 @@ export class WorkerClient {
     }
   }
 
-  initialize(): Promise<void> {
+  async initialize(): Promise<void> {
+    let lastError: Error | null = null;
+    for (let attempt = 1; attempt <= this.maxInitAttempts; attempt++) {
+      try {
+        await this.initializeOnce();
+        return;
+      } catch (error) {
+        lastError =
+          error instanceof Error ? error : new Error(String(error));
+        if (attempt >= this.maxInitAttempts) {
+          throw lastError;
+        }
+        console.warn(
+          `Worker init attempt ${attempt} failed: ${lastError.message}. Retrying...`,
+        );
+        this.resetWorker();
+      }
+    }
+    throw lastError ?? new Error("Worker initialization failed");
+  }
+
+  private initializeOnce(): Promise<void> {
     return new Promise((resolve, reject) => {
       const messageId = generateID();
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+      let isSettled = false;
+      const complete = (fn: () => void) => {
+        if (isSettled) {
+          return;
+        }
+        isSettled = true;
+        this.messageHandlers.delete(messageId);
+        if (timeoutId !== undefined) {
+          clearTimeout(timeoutId);
+        }
+        fn();
+      };
 
       this.messageHandlers.set(messageId, (message) => {
         if (message.type === "initialized") {
           this.isInitialized = true;
-          resolve();
+          complete(() => resolve());
+          return;
+        }
+        if (message.type === "init_failed") {
+          const error = new Error(message.error);
+          if (message.stack) {
+            error.stack = message.stack;
+          }
+          complete(() => reject(error));
         }
       });
 
@@ -83,13 +139,17 @@ export class WorkerClient {
         clientID: this.clientID,
       });
 
-      // Add timeout for initialization
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
         if (!this.isInitialized) {
-          this.messageHandlers.delete(messageId);
-          reject(new Error("Worker initialization timeout"));
+          complete(() =>
+            reject(
+              new Error(
+                `Worker initialization timeout after ${this.initTimeoutMs}ms`,
+              ),
+            ),
+          );
         }
-      }, 20000); // 20 second timeout
+      }, this.initTimeoutMs);
     });
   }
 
@@ -299,6 +359,7 @@ export class WorkerClient {
   cleanup() {
     this.worker.terminate();
     this.messageHandlers.clear();
+    this.isInitialized = false;
     this.gameUpdateCallback = undefined;
   }
 }

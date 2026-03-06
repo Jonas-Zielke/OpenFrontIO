@@ -18,6 +18,7 @@ import {
   getClanTag,
   replacer,
 } from "../core/Util";
+import { getWorkerApiUrl } from "../core/configuration/EndpointResolver";
 import { getPersistentID } from "./Auth";
 import { LobbyConfig } from "./ClientGameRunner";
 import { ReplaySpeedChangeEvent } from "./InputHandler";
@@ -273,7 +274,7 @@ export class LocalServer {
 
     compress(jsonString)
       .then((compressedData) => {
-        return fetch(`/${workerPath}/api/archive_singleplayer_game`, {
+        return fetch(getWorkerApiUrl(workerPath, "/api/archive_singleplayer_game"), {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

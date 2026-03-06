@@ -4,6 +4,7 @@ import {
   isUnit,
   MessageType,
   Player,
+  SAMLaunchers,
   Unit,
   UnitType,
 } from "../game/Game";
@@ -20,6 +21,14 @@ type InterceptionTile = {
   tile: TileRef;
   tick: number;
 };
+
+type SAMLauncherType = (typeof SAMLaunchers.types)[number];
+
+function samRangeForUnit(mg: Game, sam: Unit): number {
+  return sam.type() === UnitType.LongRangeSAMLauncher
+    ? mg.config().longRangeSamRange(sam.level())
+    : mg.config().samRange(sam.level());
+}
 
 /**
  * Smart SAM targeting system preshoting nukes so its range is strictly enforced
@@ -106,11 +115,11 @@ class SAMTargetingSystem {
 
   public getSingleTarget(ticks: number): Target | null {
     const samTile = this.sam.tile();
-    const range = this.mg.config().samRange(this.sam.level());
+    const range = samRangeForUnit(this.mg, this.sam);
     const rangeSquared = range * range;
 
     // Look beyond the SAM range so it can preshot nukes
-    const detectionRange = this.mg.config().maxSamRange() * 2;
+    const detectionRange = Math.max(range, this.mg.config().maxSamRange()) * 2;
     const nukes = this.mg.nearbyUnits(
       samTile,
       detectionRange,
@@ -207,9 +216,15 @@ export class SAMLauncherExecution implements Execution {
     private player: Player,
     private tile: TileRef | null,
     private sam: Unit | null = null,
+    private samType: SAMLauncherType = UnitType.SAMLauncher,
   ) {
     if (sam !== null) {
+      const existingSamType = sam.type();
+      if (!SAMLaunchers.has(existingSamType)) {
+        throw new Error(`invalid SAM unit type: ${existingSamType}`);
+      }
       this.tile = sam.tile();
+      this.samType = existingSamType;
     }
   }
 
@@ -225,13 +240,13 @@ export class SAMLauncherExecution implements Execution {
       if (this.tile === null) {
         throw new Error("tile is null");
       }
-      const spawnTile = this.player.canBuild(UnitType.SAMLauncher, this.tile);
+      const spawnTile = this.player.canBuild(this.samType, this.tile);
       if (spawnTile === false) {
-        console.warn("cannot build SAM Launcher");
+        console.warn(`cannot build ${this.samType}`);
         this.active = false;
         return;
       }
-      this.sam = this.player.buildUnit(UnitType.SAMLauncher, spawnTile, {});
+      this.sam = this.player.buildUnit(this.samType, spawnTile, {});
     }
     this.targetingSystem ??= new SAMTargetingSystem(this.mg, this.sam);
 

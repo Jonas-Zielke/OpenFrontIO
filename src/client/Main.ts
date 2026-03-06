@@ -1,5 +1,4 @@
 import version from "resources/version.txt?raw";
-import { UserMeResponse } from "../core/ApiSchemas";
 import { EventBus } from "../core/EventBus";
 import {
   GAME_ID_REGEX,
@@ -12,9 +11,6 @@ import { GameEnv } from "../core/configuration/Config";
 import { getServerConfigFromClient } from "../core/configuration/ConfigLoader";
 import { GameType } from "../core/game/Game";
 import { UserSettings } from "../core/game/UserSettings";
-import "./AccountModal";
-import { getUserMe } from "./Api";
-import { userAuth } from "./Auth";
 import { joinLobby } from "./ClientGameRunner";
 import { getPlayerCosmeticsRefs } from "./Cosmetics";
 import { crazyGamesSDK } from "./CrazyGamesSDK";
@@ -34,15 +30,11 @@ import { JoinLobbyModal } from "./JoinLobbyModal";
 import "./LangSelector";
 import { LangSelector } from "./LangSelector";
 import { initLayout } from "./Layout";
-import "./LeaderboardModal";
-import "./Matchmaking";
-import { MatchmakingModal } from "./Matchmaking";
 import { initNavigation } from "./Navigation";
 import "./NewsModal";
 import "./PatternInput";
 import "./SinglePlayerModal";
 import { TerritoryPatternsModal } from "./TerritoryPatternsModal";
-import { TokenLoginModal } from "./TokenLoginModal";
 import {
   SendKickPlayerIntentEvent,
   SendUpdateGameConfigIntentEvent,
@@ -51,7 +43,6 @@ import { UserSettingModal } from "./UserSettingModal";
 import "./UsernameInput";
 import { genAnonUsername, UsernameInput } from "./UsernameInput";
 import {
-  getDiscordAvatarUrl,
   incrementGamesPlayed,
   isInIframe,
   translateText,
@@ -61,7 +52,6 @@ import "./components/Footer";
 import "./components/MainLayout";
 import "./components/MobileNavBar";
 import "./components/PlayPage";
-import "./components/RankedModal";
 import "./components/baseComponents/Button";
 import "./components/baseComponents/Modal";
 import "./styles.css";
@@ -70,100 +60,6 @@ import "./styles/core/variables.css";
 import "./styles/layout/container.css";
 import "./styles/layout/header.css";
 import "./styles/modal/chat.css";
-
-function updateAccountNavButton(userMeResponse: UserMeResponse | false) {
-  const button = document.getElementById("nav-account-button");
-  if (!button) return;
-
-  const avatarEl = document.getElementById("nav-account-avatar") as
-    | (HTMLImageElement & { _navToken?: symbol })
-    | null;
-  const personIconEl = document.getElementById(
-    "nav-account-person-icon",
-  ) as SVGElement | null;
-  const emailBadgeEl = document.getElementById(
-    "nav-account-email-badge",
-  ) as HTMLElement | null;
-  const signInTextEl = document.getElementById(
-    "nav-account-signin-text",
-  ) as HTMLSpanElement | null;
-
-  // Unique token for this update call
-  const navToken = Symbol();
-  if (avatarEl) avatarEl._navToken = navToken;
-
-  const showAvatar = (src: string, alt?: string) => {
-    if (avatarEl) {
-      avatarEl.alt = alt ?? translateText("main.discord_avatar_alt");
-      // If the avatar fails to load (bad URL / CDN issue / offline), fall back
-      // to the default sign-in UI instead of leaving a broken image.
-      avatarEl.onerror = () => {
-        // Only handle if this is the latest update
-        if (avatarEl._navToken !== navToken) return;
-        avatarEl.src = "";
-        // If the user is still logged in via email, show the email badge state.
-        const email =
-          userMeResponse !== false ? userMeResponse.user.email : undefined;
-        if (email) {
-          showEmailLoggedIn();
-        } else {
-          showSignIn();
-        }
-      };
-      avatarEl.onload = () => {
-        // Only handle if this is the latest update
-        if (avatarEl._navToken !== navToken) return;
-        // Clear error handler after a successful load.
-        avatarEl.onerror = null;
-      };
-      avatarEl.src = src;
-      avatarEl.classList.remove("hidden");
-    }
-    personIconEl?.classList.add("hidden");
-    emailBadgeEl?.classList.add("hidden");
-    signInTextEl?.classList.add("hidden");
-    button?.classList.remove("border", "border-white/20");
-  };
-
-  const showSignIn = () => {
-    avatarEl?.classList.add("hidden");
-    personIconEl?.classList.remove("hidden");
-    emailBadgeEl?.classList.add("hidden");
-    signInTextEl?.classList.remove("hidden");
-    // Restore border when showing signin state
-    button?.classList.add("border", "border-white/20");
-  };
-
-  const showEmailLoggedIn = () => {
-    avatarEl?.classList.add("hidden");
-    personIconEl?.classList.remove("hidden");
-    emailBadgeEl?.classList.remove("hidden");
-    signInTextEl?.classList.add("hidden");
-    button?.classList.add("border", "border-white/20");
-  };
-
-  const discord =
-    userMeResponse !== false ? userMeResponse.user.discord : undefined;
-  if (discord && avatarEl) {
-    const avatarAlt = translateText("main.user_avatar_alt", {
-      username: discord.username,
-    });
-    const url = getDiscordAvatarUrl(discord);
-    if (url) {
-      showAvatar(url, avatarAlt);
-      return;
-    }
-  }
-
-  const email =
-    userMeResponse !== false ? userMeResponse.user.email : undefined;
-  if (email) {
-    showEmailLoggedIn();
-    return;
-  }
-
-  showSignIn();
-}
 
 declare global {
   interface Window {
@@ -213,7 +109,6 @@ declare global {
     "join-lobby": CustomEvent<JoinLobbyEvent>;
     "kick-player": CustomEvent;
     "join-changed": CustomEvent;
-    "open-matchmaking": CustomEvent<undefined>;
   }
 }
 
@@ -242,8 +137,6 @@ class Client {
   private gameModeSelector: GameModeSelector;
   private userSettings: UserSettings = new UserSettings();
   private patternsModal: TerritoryPatternsModal;
-  private tokenLoginModal: TokenLoginModal;
-  private matchmakingModal: MatchmakingModal;
 
   private gutterAds: GutterAds;
   private turnstileTokenPromise: Promise<{
@@ -316,10 +209,6 @@ class Client {
     document.addEventListener(
       "update-game-config",
       this.handleUpdateGameConfig.bind(this),
-    );
-    document.addEventListener(
-      "open-matchmaking",
-      this.handleOpenMatchmaking.bind(this),
     );
 
     const hlpModal = document.querySelector("help-modal") as HelpModal;
@@ -414,58 +303,14 @@ class Client {
       }
     });
 
-    this.tokenLoginModal = document.querySelector(
-      "token-login",
-    ) as TokenLoginModal;
-    if (
-      !this.tokenLoginModal ||
-      !(this.tokenLoginModal instanceof TokenLoginModal)
-    ) {
-      console.warn("Token login modal element not found");
-    }
-
-    this.matchmakingModal = document.querySelector(
-      "matchmaking-modal",
-    ) as MatchmakingModal;
-    if (
-      !this.matchmakingModal ||
-      !(this.matchmakingModal instanceof MatchmakingModal)
-    ) {
-      console.warn("Matchmaking modal element not found");
-    }
-
-    const onUserMe = async (userMeResponse: UserMeResponse | false) => {
-      updateAccountNavButton(userMeResponse);
-      const hasLinkedAccount =
-        !crazyGamesSDK.isOnCrazyGames() &&
-        ((userMeResponse || null)?.player?.flares?.length ?? 0) > 0;
-      console.log("ads enabled: ", hasLinkedAccount);
-      window.adsEnabled = !hasLinkedAccount && !crazyGamesSDK.isOnCrazyGames();
-      document.dispatchEvent(
-        new CustomEvent("userMeResponse", {
-          detail: userMeResponse,
-          bubbles: true,
-          cancelable: true,
-        }),
-      );
-
-      if (userMeResponse !== false) {
-        // Authorized
-        console.log(
-          `Your player ID is ${userMeResponse.player.publicId}\n` +
-            "Sharing this ID will allow others to view your game history and stats.",
-        );
-      }
-    };
-
-    if ((await userAuth()) === false) {
-      // Not logged in
-      onUserMe(false);
-    } else {
-      // JWT appears to be valid
-      // TODO: Add caching
-      getUserMe().then(onUserMe);
-    }
+    window.adsEnabled = !crazyGamesSDK.isOnCrazyGames();
+    document.dispatchEvent(
+      new CustomEvent("userMeResponse", {
+        detail: false,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
 
     const settingsModal = document.querySelector(
       "user-setting",
@@ -649,35 +494,13 @@ class Client {
       }
 
       this.userSettings.setSelectedPatternName(patternName);
-      const token = params.get("login-token");
-
-      if (token) {
-        strip();
-        window.addEventListener("beforeunload", () => {
-          // The page reloads after token login, so we need to save the pattern name
-          // in case it is unset during reload.
-          this.userSettings.setSelectedPatternName(patternName);
-        });
-        this.tokenLoginModal.openWithToken(token);
-      } else {
-        alertAndStrip(`purchase succeeded: ${patternName}`);
-        this.patternsModal.refresh();
-      }
+      alertAndStrip(`purchase succeeded: ${patternName}`);
+      this.patternsModal.refresh();
       return;
     }
 
     if (decodedHash.startsWith("#token-login")) {
-      const token = params.get("token-login");
-
-      if (!token) {
-        alertAndStrip(
-          `login failed! Please try again later or contact support.`,
-        );
-        return;
-      }
-
-      strip();
-      this.tokenLoginModal.openWithToken(token);
+      alertAndStrip("Login is disabled in this build.");
       return;
     }
 
@@ -703,30 +526,6 @@ class Client {
       window.location.href = "/";
     }
 
-    // Handle requeue parameter for ranked matchmaking
-    const searchParams = new URLSearchParams(window.location.search);
-    if (searchParams.has("requeue")) {
-      // Remove only the requeue parameter, preserving other params and hash
-      searchParams.delete("requeue");
-      const newUrl =
-        window.location.pathname +
-        (searchParams.toString() ? "?" + searchParams.toString() : "") +
-        window.location.hash;
-      history.replaceState(null, "", newUrl);
-      // Wait for matchmaking button to be defined, then trigger its click handler.
-      customElements.whenDefined("matchmaking-button").then(() => {
-        const matchmakingButton = document.querySelector(
-          "matchmaking-button button",
-        ) as HTMLButtonElement | null;
-        if (matchmakingButton) {
-          matchmakingButton.click();
-        } else {
-          console.warn(
-            "Requeue requested, but matchmaking button not found in DOM.",
-          );
-        }
-      });
-    }
   }
 
   private async handleJoinLobby(event: CustomEvent<JoinLobbyEvent>) {
@@ -780,10 +579,6 @@ class Client {
           "language-modal",
           "news-modal",
           "flag-input-modal",
-          "account-button",
-          "leaderboard-button",
-          "token-login",
-          "matchmaking-modal",
           "lang-selector",
           "gutter-ads",
         ].forEach((tag) => {
@@ -880,10 +675,6 @@ class Client {
     document.body.classList.remove("in-game");
 
     crazyGamesSDK.gameplayStop();
-  }
-
-  private handleOpenMatchmaking(_event: CustomEvent<undefined>) {
-    this.matchmakingModal?.open();
   }
 
   private handleKickPlayer(event: CustomEvent) {

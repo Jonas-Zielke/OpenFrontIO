@@ -113,7 +113,12 @@ export class GameModeSelector extends LitElement {
 
   private renderSpecialLobbyCard(lobby: PublicGameInfo) {
     const subtitle = this.getLobbyTitle(lobby);
-    const mainTitle = translateText("mode_selector.special_title");
+    const isX4Mode =
+      lobby.gameConfig?.goldMultiplier === 4 &&
+      lobby.gameConfig?.troopMultiplier === 4;
+    const mainTitle = isX4Mode
+      ? "X4 RESOURCES"
+      : translateText("mode_selector.special_title");
     const titleContent = subtitle
       ? html`
           <span class="block">${mainTitle}</span>
@@ -141,11 +146,7 @@ export class GameModeSelector extends LitElement {
     return html`
       <div class="flex flex-col gap-2">
         <div class="h-14 hidden lg:block">${this.renderSoloButton()}</div>
-        <div class="grid grid-cols-3 gap-2 h-14">
-          ${this.renderSmallActionCard(
-            translateText("mode_selector.ranked_title"),
-            this.openRankedMenu,
-          )}
+        <div class="grid grid-cols-2 gap-2 h-14">
           ${this.renderSmallActionCard(
             translateText("main.create"),
             this.openHostLobby,
@@ -158,11 +159,6 @@ export class GameModeSelector extends LitElement {
       </div>
     `;
   }
-
-  private openRankedMenu = () => {
-    if (!this.validateUsername()) return;
-    window.showPage?.("page-ranked");
-  };
 
   private openSinglePlayerModal = () => {
     if (!this.validateUsername()) return;
@@ -221,6 +217,12 @@ export class GameModeSelector extends LitElement {
     const modifierLabels = getModifierLabels(
       lobby.gameConfig?.publicGameModifiers,
     );
+    if (
+      lobby.gameConfig?.goldMultiplier === 4 &&
+      lobby.gameConfig?.troopMultiplier === 4
+    ) {
+      modifierLabels.push("4X GOLD + TROOPS");
+    }
     // Sort by length for visual consistency (shorter labels first)
     if (modifierLabels.length > 1) {
       modifierLabels.sort((a, b) => a.length - b.length);

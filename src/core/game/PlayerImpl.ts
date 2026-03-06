@@ -1151,6 +1151,8 @@ export class PlayerImpl implements Player {
       case UnitType.Port:
         return this.portSpawn(targetTile, validTiles);
       case UnitType.Warship:
+      case UnitType.Submarine:
+      case UnitType.NuclearSubmarine:
         return this.warshipSpawn(targetTile);
       case UnitType.Shell:
       case UnitType.SAMMissile:
@@ -1164,6 +1166,7 @@ export class PlayerImpl implements Player {
       case UnitType.MissileSilo:
       case UnitType.DefensePost:
       case UnitType.SAMLauncher:
+      case UnitType.LongRangeSAMLauncher:
       case UnitType.City:
       case UnitType.Factory:
         return this.landBasedStructureSpawn(targetTile, validTiles);
@@ -1200,16 +1203,41 @@ export class PlayerImpl implements Player {
       }
     }
 
-    // only get missilesilos that are not on cooldown and not under construction
-    const spawns = this.units(UnitType.MissileSilo)
-      .filter((silo) => {
-        return !silo.isInCooldown() && !silo.isUnderConstruction();
-      })
-      .sort(distSortUnit(this.mg, tile));
+    // Missile silos can only target up to roughly one-third of the map.
+    const siloMaxRange = this.siloMaxNukeRange();
+    const siloMaxRangeSquared = siloMaxRange * siloMaxRange;
+
+    const silos = this.units(UnitType.MissileSilo).filter((silo) => {
+      return (
+        !silo.isInCooldown() &&
+        !silo.isUnderConstruction() &&
+        this.mg.euclideanDistSquared(silo.tile(), tile) <= siloMaxRangeSquared
+      );
+    });
+
+    // Nuclear submarines are mobile launchers for atom/hydrogen bombs.
+    const canUseNuclearSubmarine =
+      nukeType === UnitType.AtomBomb || nukeType === UnitType.HydrogenBomb;
+    const nuclearSubmarines = canUseNuclearSubmarine
+      ? this.units(UnitType.NuclearSubmarine).filter((sub) => {
+          return !sub.isInCooldown() && !sub.isUnderConstruction();
+        })
+      : [];
+
+    const spawns = [...silos, ...nuclearSubmarines].sort(
+      distSortUnit(this.mg, tile),
+    );
+
     if (spawns.length === 0) {
       return false;
     }
+
     return spawns[0].tile();
+  }
+
+  private siloMaxNukeRange(): number {
+    const mapDiagonal = Math.hypot(this.mg.width(), this.mg.height());
+    return Math.max(1, Math.floor(mapDiagonal / 3));
   }
 
   portSpawn(tile: TileRef, validTiles: TileRef[] | null): TileRef | false {

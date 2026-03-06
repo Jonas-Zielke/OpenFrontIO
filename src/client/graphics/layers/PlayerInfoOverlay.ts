@@ -7,6 +7,7 @@ import {
   PlayerProfile,
   PlayerType,
   Relation,
+  Submarines,
   Unit,
   UnitType,
 } from "../../../core/game/Game";
@@ -63,6 +64,7 @@ function distSortUnitWorld(coord: { x: number; y: number }, game: GameView) {
 
 @customElement("player-info-overlay")
 export class PlayerInfoOverlay extends LitElement implements Layer {
+  private readonly SUBMARINE_DETECTION_RANGE = 40;
   @property({ type: Object })
   public game!: GameView;
 
@@ -150,8 +152,17 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
       this.setVisible(true);
     } else if (!this.game.isLand(tile)) {
       const units = this.game
-        .units(UnitType.Warship, UnitType.TradeShip, UnitType.TransportShip)
-        .filter((u) => euclideanDistWorld(worldCoord, u.tile(), this.game) < 50)
+        .units(
+          UnitType.Warship,
+          UnitType.TradeShip,
+          UnitType.TransportShip,
+          ...Submarines.types,
+        )
+        .filter(
+          (u) =>
+            (!Submarines.has(u.type()) || this.canSeeSubmarine(u)) &&
+            euclideanDistWorld(worldCoord, u.tile(), this.game) < 50,
+        )
         .sort(distSortUnitWorld(worldCoord, this.game));
 
       if (units.length > 0) {
@@ -159,6 +170,28 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
         this.setVisible(true);
       }
     }
+  }
+
+  private canSeeSubmarine(unit: UnitView): boolean {
+    if (!Submarines.has(unit.type())) {
+      return true;
+    }
+    const myPlayer = this.game.myPlayer();
+    if (myPlayer === null) {
+      return false;
+    }
+    if (unit.owner() === myPlayer || myPlayer.isFriendly(unit.owner())) {
+      return true;
+    }
+    const detectionRangeSquared = this.SUBMARINE_DETECTION_RANGE ** 2;
+    return this.game.units(...Submarines.types).some((mySubmarine) => {
+      return (
+        mySubmarine.owner() === myPlayer &&
+        mySubmarine.isActive() &&
+        this.game.euclideanDistSquared(mySubmarine.tile(), unit.tile()) <=
+          detectionRangeSquared
+      );
+    });
   }
 
   tick() {
@@ -227,7 +260,19 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
   }
 
   private displayUnitCount(player: PlayerView, type: UnitType, icon: string) {
-    return !this.game.config().isUnitDisabled(type)
+    const shouldHide =
+      type === UnitType.SAMLauncher
+        ? this.game.config().isUnitDisabled(UnitType.SAMLauncher) &&
+          this.game.config().isUnitDisabled(UnitType.LongRangeSAMLauncher)
+        : this.game.config().isUnitDisabled(type);
+
+    const count =
+      type === UnitType.SAMLauncher
+        ? player.totalUnitLevels(UnitType.SAMLauncher) +
+          player.totalUnitLevels(UnitType.LongRangeSAMLauncher)
+        : player.totalUnitLevels(type);
+
+    return !shouldHide
       ? html`<div
           class="flex items-center justify-center gap-0.5 lg:gap-1 p-0.5 lg:p-1 border rounded-md border-gray-500 text-[10px] lg:text-xs w-9 lg:w-12 h-6 lg:h-7"
           translate="no"
@@ -236,7 +281,7 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
             src=${icon}
             class="w-3 h-3 lg:w-4 lg:h-4 object-contain shrink-0"
           />
-          <span>${player.totalUnitLevels(type)}</span>
+          <span>${count}</span>
         </div>`
       : "";
   }

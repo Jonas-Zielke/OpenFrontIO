@@ -11,7 +11,6 @@ import { getServerConfigFromServer } from "../core/configuration/ConfigLoader";
 import { GameType } from "../core/game/Game";
 import {
   ClientMessageSchema,
-  GameID,
   PartialGameRecordSchema,
   ServerErrorMessage,
 } from "../core/Schemas";
@@ -25,8 +24,6 @@ import { getUserMe, verifyClientToken } from "./jwt";
 import { logger } from "./Logger";
 
 import { GameEnv } from "../core/configuration/Config";
-import { MapPlaylist } from "./MapPlaylist";
-import { startPolling } from "./PollingLoop";
 import { PrivilegeRefresher } from "./PrivilegeRefresher";
 import { verifyTurnstileToken } from "./Turnstile";
 import { WorkerLobbyService } from "./WorkerLobbyService";
@@ -36,7 +33,6 @@ const config = getServerConfigFromServer();
 
 const workerId = parseInt(process.env.WORKER_ID ?? "0");
 const log = logger.child({ comp: `w_${workerId}` });
-const playlist = new MapPlaylist();
 
 // Worker setup
 export async function startWorker() {
@@ -55,13 +51,6 @@ export async function startWorker() {
   // Initialize lobby service (handles WebSocket upgrade routing)
   const lobbyService = new WorkerLobbyService(server, wss, gm, log);
 
-  setTimeout(
-    () => {
-      startMatchmakingPolling(gm);
-    },
-    1000 + Math.random() * 2000,
-  );
-
   if (config.otelEnabled()) {
     initWorkerMetrics(gm);
   }
@@ -72,7 +61,11 @@ export async function startWorker() {
     config.apiKey(),
     log,
   );
-  privilegeRefresher.start();
+  if (config.env() !== GameEnv.Dev) {
+    privilegeRefresher.start();
+  } else {
+    log.info("Skipping privilege refresher in dev mode");
+  }
 
   // Middleware to handle /wX path prefix
   app.use((req, res, next) => {
@@ -377,13 +370,7 @@ export async function startWorker() {
         let flares: string[] | undefined;
 
         const allowedFlares = config.allowedFlares();
-        if (claims === null) {
-          if (allowedFlares !== undefined) {
-            log.warn("Unauthorized: Anonymous user attempted to join game");
-            ws.close(1002, "Unauthorized");
-            return;
-          }
-        } else {
+        if (claims !== null) {
           // Verify token and get player permissions
           const result = await getUserMe(clientMsg.token, config);
           if (result.type === "error") {
@@ -530,79 +517,4 @@ export async function startWorker() {
   process.on("unhandledRejection", (reason, promise) => {
     log.error(`unhandled rejection at:`, promise, "reason:", reason);
   });
-}
-
-async function startMatchmakingPolling(gm: GameManager) {
-  startPolling(
-    async () => {
-      try {
-        const url = `${config.jwtIssuer() + "/matchmaking/checkin"}`;
-        const gameId = generateGameIdForWorker();
-        if (gameId === null) {
-          log.warn(`Failed to generate game ID for worker ${workerId}`);
-          return;
-        }
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 20000);
-        const response = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": config.apiKey(),
-          },
-          body: JSON.stringify({
-            id: workerId,
-            gameId: gameId,
-            ccu: gm.activeClients(),
-            instanceId: process.env.INSTANCE_ID,
-          }),
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          log.warn(
-            `Failed to poll lobby: ${response.status} ${response.statusText}`,
-          );
-          return;
-        }
-
-        const data = await response.json();
-        log.info(`Lobby poll successful:`, data);
-
-        if (data.assignment) {
-          gm.createGame(
-            gameId,
-            playlist.get1v1Config(),
-            undefined,
-            Date.now() + 7000,
-          );
-        }
-      } catch (error) {
-        if (error instanceof Error && error.name === "AbortError") {
-          // Abort is expected if no game is scheduled on this worker.
-          return;
-        }
-        log.error(`Error polling lobby:`, error);
-      }
-    },
-    5000 + Math.random() * 1000,
-  );
-}
-
-// TODO: This is a hack to generate a game ID for the worker.
-// It should be replaced with a more robust solution.
-function generateGameIdForWorker(): GameID | null {
-  let attempts = 1000;
-  while (attempts > 0) {
-    const gameId = generateID();
-    if (workerId === config.workerIndex(gameId)) {
-      return gameId;
-    }
-    attempts--;
-  }
-  log.warn(`Failed to generate game ID for worker ${workerId}`);
-  return null;
 }

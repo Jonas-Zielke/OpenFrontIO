@@ -264,6 +264,8 @@ function unitTypeGroup<T extends readonly UnitType[]>(types: T) {
 export enum UnitType {
   TransportShip = "Transport",
   Warship = "Warship",
+  Submarine = "Submarine",
+  NuclearSubmarine = "Nuclear Submarine",
   Shell = "Shell",
   SAMMissile = "SAMMissile",
   Port = "Port",
@@ -273,6 +275,7 @@ export enum UnitType {
   MissileSilo = "Missile Silo",
   DefensePost = "Defense Post",
   SAMLauncher = "SAM Launcher",
+  LongRangeSAMLauncher = "Long Range SAM Launcher",
   City = "City",
   MIRV = "MIRV",
   MIRVWarhead = "MIRV Warhead",
@@ -298,15 +301,38 @@ export const BuildableAttacks = unitTypeGroup([
   UnitType.HydrogenBomb,
   UnitType.MIRV,
   UnitType.Warship,
+  UnitType.Submarine,
+  UnitType.NuclearSubmarine,
 ] as const);
 
 export const Structures = unitTypeGroup([
   UnitType.City,
   UnitType.DefensePost,
   UnitType.SAMLauncher,
+  UnitType.LongRangeSAMLauncher,
   UnitType.MissileSilo,
   UnitType.Port,
   UnitType.Factory,
+] as const);
+
+export const SAMLaunchers = unitTypeGroup([
+  UnitType.SAMLauncher,
+  UnitType.LongRangeSAMLauncher,
+] as const);
+
+export const Submarines = unitTypeGroup([
+  UnitType.Submarine,
+  UnitType.NuclearSubmarine,
+] as const);
+
+export const NavalUnits = unitTypeGroup([
+  UnitType.Warship,
+  ...Submarines.types,
+] as const);
+
+export const NukeLaunchers = unitTypeGroup([
+  UnitType.MissileSilo,
+  UnitType.NuclearSubmarine,
 ] as const);
 
 export const BuildMenus = unitTypeGroup([
@@ -336,6 +362,14 @@ export interface UnitParamsMap {
   };
 
   [UnitType.Warship]: {
+    patrolTile: TileRef;
+  };
+
+  [UnitType.Submarine]: {
+    patrolTile: TileRef;
+  };
+
+  [UnitType.NuclearSubmarine]: {
     patrolTile: TileRef;
   };
 
@@ -373,6 +407,8 @@ export interface UnitParamsMap {
   [UnitType.DefensePost]: Record<string, never>;
 
   [UnitType.SAMLauncher]: Record<string, never>;
+
+  [UnitType.LongRangeSAMLauncher]: Record<string, never>;
 
   [UnitType.City]: Record<string, never>;
 

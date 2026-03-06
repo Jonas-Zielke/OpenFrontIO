@@ -13,8 +13,6 @@ export class PlayPage extends LitElement {
         id="page-play"
         class="flex flex-col gap-2 w-full px-0 lg:px-4 lg:my-auto min-h-0"
       >
-        <token-login class="absolute"></token-login>
-
         <!-- Mobile: Fixed top bar -->
         <div
           class="lg:hidden fixed left-0 right-0 top-0 z-40 pt-[env(safe-area-inset-top)] bg-[color-mix(in_oklab,var(--frenchBlue)_75%,black)] border-b border-white/10"

@@ -1,7 +1,7 @@
 import { colord, Colord } from "colord";
 import { EventBus } from "../../../core/EventBus";
 import { Theme } from "../../../core/configuration/Config";
-import { UnitType } from "../../../core/game/Game";
+import { Submarines, UnitType } from "../../../core/game/Game";
 import { TileRef } from "../../../core/game/GameMap";
 import { GameView, UnitView } from "../../../core/game/GameView";
 import { BezenhamLine } from "../../../core/utilities/Line";
@@ -48,8 +48,10 @@ export class UnitLayer implements Layer {
   // Selected unit property as suggested in the review comment
   private selectedUnit: UnitView | null = null;
 
-  // Configuration for unit selection
-  private readonly WARSHIP_SELECTION_RADIUS = 10; // Radius in game cells for warship selection hit zone
+  // Configuration for naval unit selection
+  private readonly NAVAL_SELECTION_RADIUS = 10;
+  // Enemy submarines are only visible when one of your submarines is nearby.
+  private readonly SUBMARINE_DETECTION_RANGE = 40;
 
   constructor(
     private game: GameView,
@@ -69,20 +71,17 @@ export class UnitLayer implements Layer {
       this.game
         .updatesSinceLastTick()
         ?.[GameUpdateType.Unit]?.map((unit) => unit.id) ?? [];
+    const visibilityUnitIds = this.game
+      .units(...Submarines.types)
+      .map((unit) => unit.id());
 
     const motionPlanUnitIds = this.game.motionPlannedUnitIds();
 
-    if (updatedUnitIds.length === 0) {
-      this.updateUnitsSprites(motionPlanUnitIds);
-      return;
-    }
-    if (motionPlanUnitIds.length === 0) {
-      this.updateUnitsSprites(updatedUnitIds);
-      return;
-    }
-
     const unitIds = new Set<number>(updatedUnitIds);
     for (const id of motionPlanUnitIds) {
+      unitIds.add(id);
+    }
+    for (const id of visibilityUnitIds) {
       unitIds.add(id);
     }
     this.updateUnitsSprites(Array.from(unitIds));
@@ -99,20 +98,21 @@ export class UnitLayer implements Layer {
   }
 
   /**
-   * Find player-owned warships near the given cell within a configurable radius
+   * Find player-owned naval units near the given cell within a configurable radius
    * @param clickRef The tile to check
-   * @returns Array of player's warships in range, sorted by distance (closest first)
+   * @returns Array of player's naval units in range, sorted by distance (closest first)
    */
-  private findWarshipsNearCell(clickRef: TileRef): UnitView[] {
-    // Only select warships owned by the player
+  private findNavalUnitsNearCell(clickRef: TileRef): UnitView[] {
+    // Only select naval units owned by the player.
+    const navalTypes = [UnitType.Warship, ...Submarines.types] as const;
     return this.game
-      .units(UnitType.Warship)
+      .units(...navalTypes)
       .filter(
         (unit) =>
           unit.isActive() &&
           unit.owner() === this.game.myPlayer() && // Only allow selecting own warships
           this.game.manhattanDist(unit.tile(), clickRef) <=
-            this.WARSHIP_SELECTION_RADIUS,
+            this.NAVAL_SELECTION_RADIUS,
       )
       .sort((a, b) => {
         // Sort by distance (closest first)
@@ -125,7 +125,7 @@ export class UnitLayer implements Layer {
   private onMouseUp(
     event: MouseUpEvent,
     clickRef?: TileRef,
-    nearbyWarships?: UnitView[],
+    nearbyNavalUnits?: UnitView[],
   ) {
     if (clickRef === undefined) {
       // Convert screen coordinates to world coordinates
@@ -148,11 +148,10 @@ export class UnitLayer implements Layer {
       return;
     }
 
-    // Find warships near this tile, sorted by distance
-    nearbyWarships ??= this.findWarshipsNearCell(clickRef);
-    if (nearbyWarships.length > 0) {
-      // Toggle selection of the closest warship
-      this.eventBus.emit(new UnitSelectionEvent(nearbyWarships[0], true));
+    // Find naval units near this tile, sorted by distance.
+    nearbyNavalUnits ??= this.findNavalUnitsNearCell(clickRef);
+    if (nearbyNavalUnits.length > 0) {
+      this.eventBus.emit(new UnitSelectionEvent(nearbyNavalUnits[0], true));
     }
   }
 
@@ -184,13 +183,13 @@ export class UnitLayer implements Layer {
       return;
     }
 
-    const nearbyWarships = this.findWarshipsNearCell(clickRef);
+    const nearbyNavalUnits = this.findNavalUnitsNearCell(clickRef);
 
-    if (nearbyWarships.length > 0) {
+    if (nearbyNavalUnits.length > 0) {
       this.onMouseUp(
         new MouseUpEvent(event.x, event.y),
         clickRef,
-        nearbyWarships,
+        nearbyNavalUnits,
       );
     } else {
       // No warships selected or nearby, open Radial Menu
@@ -306,6 +305,47 @@ export class UnitLayer implements Layer {
     unitViews.forEach((unitView) => this.onUnitEvent(unitView));
   }
 
+  private isEnemySubmarineHidden(unit: UnitView): boolean {
+    if (!Submarines.has(unit.type())) {
+      return false;
+    }
+    const myPlayer = this.game.myPlayer();
+    if (myPlayer === null) {
+      return false;
+    }
+    if (unit.owner() === myPlayer || myPlayer.isFriendly(unit.owner())) {
+      return false;
+    }
+    const detectionRangeSquared = this.SUBMARINE_DETECTION_RANGE ** 2;
+    return !this.game.units(...Submarines.types).some((mySubmarine) => {
+      return (
+        mySubmarine.isActive() &&
+        mySubmarine.owner() === myPlayer &&
+        this.game.euclideanDistSquared(mySubmarine.tile(), unit.tile()) <=
+          detectionRangeSquared
+      );
+    });
+  }
+
+  private clearSpriteAt(unit: UnitView) {
+    if (!isSpriteReady(unit)) {
+      return;
+    }
+    const sprite = getColoredSprite(unit, this.theme);
+    const clearSize = sprite.width + 1;
+    const x = this.game.x(unit.tile());
+    const y = this.game.y(unit.tile());
+    const lastX = this.game.x(unit.lastTile());
+    const lastY = this.game.y(unit.lastTile());
+    this.context.clearRect(x - clearSize / 2, y - clearSize / 2, clearSize, clearSize);
+    this.context.clearRect(
+      lastX - clearSize / 2,
+      lastY - clearSize / 2,
+      clearSize,
+      clearSize,
+    );
+  }
+
   private relationship(unit: UnitView): Relationship {
     const myPlayer = this.game.myPlayer();
     if (myPlayer === null) {
@@ -321,6 +361,12 @@ export class UnitLayer implements Layer {
   }
 
   onUnitEvent(unit: UnitView) {
+    if (this.isEnemySubmarineHidden(unit)) {
+      this.clearSpriteAt(unit);
+      this.clearTrail(unit);
+      return;
+    }
+
     // Check if unit was deactivated
     if (!unit.isActive()) {
       this.handleUnitDeactivation(unit);
@@ -331,7 +377,9 @@ export class UnitLayer implements Layer {
         this.handleBoatEvent(unit);
         break;
       case UnitType.Warship:
-        this.handleWarShipEvent(unit);
+      case UnitType.Submarine:
+      case UnitType.NuclearSubmarine:
+        this.handleNavalUnitEvent(unit);
         break;
       case UnitType.Shell:
         this.handleShellEvent(unit);
@@ -356,7 +404,7 @@ export class UnitLayer implements Layer {
     }
   }
 
-  private handleWarShipEvent(unit: UnitView) {
+  private handleNavalUnitEvent(unit: UnitView) {
     if (unit.targetUnitId()) {
       this.drawSprite(unit, colord("rgb(200,0,0)"));
     } else {

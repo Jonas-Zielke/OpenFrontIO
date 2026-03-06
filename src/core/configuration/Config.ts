@@ -160,6 +160,7 @@ export interface Config {
   defaultSamMissileSpeed(): number;
   defaultSamRange(): number;
   samRange(level: number): number;
+  longRangeSamRange(level: number): number;
   maxSamRange(): number;
   nukeDeathFactor(
     nukeType: NukeType,

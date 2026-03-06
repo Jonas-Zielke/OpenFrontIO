@@ -152,11 +152,6 @@ export class DesktopNavBar extends LitElement {
           data-page="page-settings"
           data-i18n="main.settings"
         ></button>
-        <button
-          class="nav-menu-item text-white/70 hover:text-blue-500 font-bold tracking-widest uppercase cursor-pointer transition-colors [&.active]:text-blue-500"
-          data-page="page-leaderboard"
-          data-i18n="main.leaderboard"
-        ></button>
         <div class="relative">
           <button
             class="nav-menu-item text-white/70 hover:text-blue-500 font-bold tracking-widest uppercase cursor-pointer transition-colors [&.active]:text-blue-500"
@@ -176,62 +171,6 @@ export class DesktopNavBar extends LitElement {
             : ""}
         </div>
         <lang-selector></lang-selector>
-        <button
-          id="nav-account-button"
-          class="no-crazygames nav-menu-item relative h-10 rounded-full overflow-hidden flex items-center justify-center gap-2 px-3 bg-transparent border border-white/20 text-white/80 hover:text-white cursor-pointer transition-colors [&.active]:text-white"
-          data-page="page-account"
-          data-i18n-aria-label="main.account"
-          data-i18n-title="main.account"
-        >
-          <img
-            id="nav-account-avatar"
-            class="no-crazygames hidden w-8 h-8 rounded-full object-cover"
-            alt=""
-            data-i18n-alt="main.discord_avatar_alt"
-            referrerpolicy="no-referrer"
-          />
-          <svg
-            id="nav-account-person-icon"
-            class="w-5 h-5"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M20 21a8 8 0 0 0-16 0" />
-            <path d="M12 13a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" />
-          </svg>
-          <span
-            id="nav-account-email-badge"
-            class="hidden absolute bottom-1 right-1 w-4 h-4 rounded-full bg-slate-900/80 border border-white/20 flex items-center justify-center"
-            aria-hidden="true"
-          >
-            <svg
-              class="w-2.5 h-2.5 text-white/80"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M4 4h16v16H4z" opacity="0" />
-              <path d="M4 6h16v12H4z" />
-              <path d="m4 7 8 6 8-6" />
-            </svg>
-          </span>
-          <span
-            id="nav-account-signin-text"
-            class="text-xs font-bold tracking-widest"
-            data-i18n="main.sign_in"
-          >
-          </span>
-        </button>
       </nav>
     `;
   }

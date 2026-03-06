@@ -3,6 +3,7 @@ import {
   AllUnitParams,
   MessageType,
   Player,
+  SAMLaunchers,
   Tick,
   TrainType,
   TrajectoryTile,
@@ -71,10 +72,13 @@ export class UnitImpl implements Unit {
 
     switch (this._type) {
       case UnitType.Warship:
+      case UnitType.Submarine:
+      case UnitType.NuclearSubmarine:
       case UnitType.Port:
       case UnitType.MissileSilo:
       case UnitType.DefensePost:
       case UnitType.SAMLauncher:
+      case UnitType.LongRangeSAMLauncher:
       case UnitType.City:
       case UnitType.Factory:
         this.mg.stats().unitBuild(_owner, this._type);
@@ -189,10 +193,13 @@ export class UnitImpl implements Unit {
     this.clearPendingDeletion();
     switch (this._type) {
       case UnitType.Warship:
+      case UnitType.Submarine:
+      case UnitType.NuclearSubmarine:
       case UnitType.Port:
       case UnitType.MissileSilo:
       case UnitType.DefensePost:
       case UnitType.SAMLauncher:
+      case UnitType.LongRangeSAMLauncher:
       case UnitType.City:
       case UnitType.Factory:
         this.mg.stats().unitCapture(newOwner, this._type);
@@ -288,7 +295,10 @@ export class UnitImpl implements Unit {
         case UnitType.MissileSilo:
         case UnitType.Port:
         case UnitType.SAMLauncher:
+        case UnitType.LongRangeSAMLauncher:
         case UnitType.Warship:
+        case UnitType.Submarine:
+        case UnitType.NuclearSubmarine:
         case UnitType.Factory:
           this.mg.stats().unitDestroy(destroyer, this._type);
           this.mg.stats().unitLose(this.owner(), this._type);
@@ -453,7 +463,7 @@ export class UnitImpl implements Unit {
 
   increaseLevel(): void {
     this._level++;
-    if ([UnitType.MissileSilo, UnitType.SAMLauncher].includes(this.type())) {
+    if (this.type() === UnitType.MissileSilo || SAMLaunchers.has(this.type())) {
       this._missileTimerQueue.push(this.mg.ticks());
     }
     this.mg.addUpdate(this.toUpdate());
@@ -461,7 +471,7 @@ export class UnitImpl implements Unit {
 
   decreaseLevel(destroyer?: Player): void {
     this._level--;
-    if ([UnitType.MissileSilo, UnitType.SAMLauncher].includes(this.type())) {
+    if (this.type() === UnitType.MissileSilo || SAMLaunchers.has(this.type())) {
       this._missileTimerQueue.pop();
     }
     if (this._level <= 0) {

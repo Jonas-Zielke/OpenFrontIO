@@ -6,6 +6,7 @@ import {
   Player,
   PlayerType,
   Relation,
+  SAMLaunchers,
   Tick,
   Unit,
   UnitType,
@@ -41,6 +42,16 @@ export class NationNukeBehavior {
     private attackBehavior: AiAttackBehavior,
     private emojiBehavior: NationEmojiBehavior,
   ) {}
+
+  private samRange(sam: Unit): number {
+    return sam.type() === UnitType.LongRangeSAMLauncher
+      ? this.game.config().longRangeSamRange(sam.level())
+      : this.game.config().samRange(sam.level());
+  }
+
+  private samSearchRadius(): number {
+    return this.game.config().maxSamRange() * 4;
+  }
 
   maybeSendNuke() {
     const nukeTarget = this.findBestNukeTarget();
@@ -83,6 +94,7 @@ export class NationNukeBehavior {
       UnitType.MissileSilo,
       UnitType.Port,
       UnitType.SAMLauncher,
+      UnitType.LongRangeSAMLauncher,
       UnitType.Factory,
     );
     const structureTiles = structures.map((u) => u.tile());
@@ -535,8 +547,8 @@ export class NationNukeBehavior {
       const tile = trajectory[i];
       const nearbySams = this.game.nearbyUnits(
         tile,
-        this.game.config().maxSamRange(),
-        UnitType.SAMLauncher,
+        this.samSearchRadius(),
+        SAMLaunchers.types,
       );
 
       for (const sam of nearbySams) {
@@ -548,7 +560,7 @@ export class NationNukeBehavior {
         if (excludedSamIds?.has(sam.unit.id())) {
           continue;
         }
-        const rangeSquared = this.game.config().samRange(sam.unit.level()) ** 2;
+        const rangeSquared = this.samRange(sam.unit) ** 2;
         if (sam.distSquared <= rangeSquared) {
           return true;
         }
@@ -615,7 +627,7 @@ export class NationNukeBehavior {
       const dist50 = euclDistFN(tile, 50, false);
       const hasSam = targets.some(
         (unit) =>
-          unit.type() === UnitType.SAMLauncher &&
+          SAMLaunchers.has(unit.type()) &&
           dist50(this.game, unit.tile()),
       );
       if (hasSam) return -1;
@@ -632,14 +644,14 @@ export class NationNukeBehavior {
       const nearbySams = this.game.nearbyUnits(
         tile,
         hydroMagnitude.outer,
-        UnitType.SAMLauncher,
+        SAMLaunchers.types,
       );
 
       for (const sam of nearbySams) {
         const samLevel = sam.unit.level();
         if (samLevel >= 5) continue; // Can't outrange level 5+ SAMs
 
-        const samRange = this.game.config().samRange(samLevel);
+        const samRange = this.samRange(sam.unit);
         const distToSam = Math.sqrt(
           this.game.euclideanDistSquared(tile, sam.unit.tile()),
         );
@@ -720,7 +732,10 @@ export class NationNukeBehavior {
     }
 
     const atomCost = this.cost(UnitType.AtomBomb);
-    const enemySams = nukeTarget.units(UnitType.SAMLauncher);
+    const enemySams = [
+      ...nukeTarget.units(UnitType.SAMLauncher),
+      ...nukeTarget.units(UnitType.LongRangeSAMLauncher),
+    ];
     if (enemySams.length === 0) {
       return;
     }
@@ -932,8 +947,8 @@ export class NationNukeBehavior {
   private findEnemySamsCoveringTile(tile: TileRef): Unit[] {
     const nearbySams = this.game.nearbyUnits(
       tile,
-      this.game.config().maxSamRange(),
-      UnitType.SAMLauncher,
+      this.samSearchRadius(),
+      SAMLaunchers.types,
     );
 
     const result: Unit[] = [];
@@ -942,7 +957,7 @@ export class NationNukeBehavior {
       if (owner === this.player || this.player.isFriendly(owner)) {
         continue;
       }
-      const range = this.game.config().samRange(sam.unit.level());
+      const range = this.samRange(sam.unit);
       if (sam.distSquared <= range * range) {
         result.push(sam.unit);
       }
@@ -958,7 +973,10 @@ export class NationNukeBehavior {
     const silos = this.player.units(UnitType.MissileSilo);
     if (silos.length === 0) return;
 
-    const ourSams = this.player.units(UnitType.SAMLauncher);
+    const ourSams = [
+      ...this.player.units(UnitType.SAMLauncher),
+      ...this.player.units(UnitType.LongRangeSAMLauncher),
+    ];
     let bestSilo: Unit | null = null;
     let bestProtection = -1;
 
@@ -967,7 +985,7 @@ export class NationNukeBehavior {
 
       let protection = 0;
       for (const sam of ourSams) {
-        const range = this.game.config().samRange(sam.level());
+        const range = this.samRange(sam);
         const distSquared = this.game.euclideanDistSquared(
           silo.tile(),
           sam.tile(),

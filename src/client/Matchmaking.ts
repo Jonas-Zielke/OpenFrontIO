@@ -2,6 +2,10 @@ import { html, LitElement } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { UserMeResponse } from "../core/ApiSchemas";
 import { getServerConfigFromClient } from "../core/configuration/ConfigLoader";
+import {
+  getWebSocketUrl,
+  getWorkerApiUrl,
+} from "../core/configuration/EndpointResolver";
 import { getUserMe, hasLinkedAccount } from "./Api";
 import { getPlayToken } from "./Auth";
 import { BaseModal } from "./components/BaseModal";
@@ -86,10 +90,10 @@ export class MatchmakingModal extends BaseModal {
   }
 
   private async connect() {
-    const config = await getServerConfigFromClient();
-
     this.socket = new WebSocket(
-      `${config.jwtIssuer()}/matchmaking/join?instance_id=${window.INSTANCE_ID}`,
+      getWebSocketUrl(
+        `/matchmaking/join?instance_id=${encodeURIComponent(window.INSTANCE_ID)}`,
+      ),
     );
     this.socket.onopen = async () => {
       console.log("Connected to matchmaking server");
@@ -183,7 +187,10 @@ export class MatchmakingModal extends BaseModal {
       return;
     }
     const config = await getServerConfigFromClient();
-    const url = `/${config.workerPath(this.gameID)}/api/game/${this.gameID}/exists`;
+    const url = getWorkerApiUrl(
+      config.workerPath(this.gameID),
+      `/api/game/${this.gameID}/exists`,
+    );
 
     const response = await fetch(url, {
       method: "GET",

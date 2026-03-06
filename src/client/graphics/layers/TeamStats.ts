@@ -95,7 +95,9 @@ export class TeamStats extends LitElement implements Layer {
             totalGold += p.gold();
             totalScoreSort += p.numTilesOwned();
             totalLaunchers += p.totalUnitLevels(UnitType.MissileSilo);
-            totalSAMs += p.totalUnitLevels(UnitType.SAMLauncher);
+            totalSAMs +=
+              p.totalUnitLevels(UnitType.SAMLauncher) +
+              p.totalUnitLevels(UnitType.LongRangeSAMLauncher);
             totalWarShips += p.totalUnitLevels(UnitType.Warship);
             totalCities += p.totalUnitLevels(UnitType.City);
           }

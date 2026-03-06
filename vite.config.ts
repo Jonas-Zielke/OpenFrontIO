@@ -13,6 +13,7 @@ const __dirname = path.dirname(__filename);
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const isProduction = mode === "production";
+  const websocketUrl = env.WEBSOCKET_URL || (isProduction ? "" : "localhost:3000");
   // In dev, redirect visits to /w*/game/* to "/" so Vite serves the index.html.
   const devGameHtmlBypass = (req?: {
     url?: string;
@@ -81,9 +82,7 @@ export default defineConfig(({ mode }) => {
     ],
 
     define: {
-      "process.env.WEBSOCKET_URL": JSON.stringify(
-        isProduction ? "" : "localhost:3000",
-      ),
+      "process.env.WEBSOCKET_URL": JSON.stringify(websocketUrl),
       "process.env.GAME_ENV": JSON.stringify(isProduction ? "prod" : "dev"),
       "process.env.STRIPE_PUBLISHABLE_KEY": JSON.stringify(
         env.STRIPE_PUBLISHABLE_KEY,
