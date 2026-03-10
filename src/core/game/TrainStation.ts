@@ -28,6 +28,13 @@ class TradeStationStopHandler implements TrainStopHandler {
     }
     trainOwner.addGold(gold, station.tile());
     mg.stats().trainSelfTrade(trainOwner, gold);
+
+    if (station.unit.type() === UnitType.City) {
+      const cityGold = mg.config().trainCityStopGold(station.unit.level());
+      if (cityGold > 0n) {
+        stationOwner.addGold(cityGold, station.tile());
+      }
+    }
   }
 }
 
@@ -36,7 +43,12 @@ class FactoryStopHandler implements TrainStopHandler {
     mg: Game,
     station: TrainStation,
     trainExecution: TrainExecution,
-  ): void {}
+  ): void {
+    const gold = mg.config().trainFactoryStopGold();
+    if (gold > 0n) {
+      station.unit.owner().addGold(gold, station.tile());
+    }
+  }
 }
 
 export function createTrainStopHandlers(

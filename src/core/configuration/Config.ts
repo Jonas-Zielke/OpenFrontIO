@@ -132,7 +132,9 @@ export interface Config {
     numTradeShips: number,
   ): number;
   trainGold(rel: "self" | "team" | "ally" | "other"): Gold;
-  trainSpawnRate(numPlayerFactories: number): number;
+  trainFactoryStopGold(): Gold;
+  trainCityStopGold(cityLevel: number): Gold;
+  trainSpawnRate(player: Player): number;
   trainStationMinRange(): number;
   trainStationMaxRange(): number;
   railroadMaxSize(): number;

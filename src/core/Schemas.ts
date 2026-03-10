@@ -14,6 +14,7 @@ import {
   GameMapSize,
   GameMapType,
   GameMode,
+  GameVariant,
   GameType,
   HumansVsNations,
   Quads,
@@ -208,6 +209,7 @@ export const GameConfigSchema = z.object({
   donateTroops: z.boolean(), // Configures donations to humans only
   gameType: z.enum(GameType),
   gameMode: z.enum(GameMode),
+  gameVariant: z.enum(GameVariant).optional(),
   rankedType: z.enum(RankedType).optional(), // Only set for ranked games.
   gameMapSize: z.enum(GameMapSize),
   publicGameModifiers: z

@@ -7,6 +7,7 @@ import {
   GameMapSize,
   GameMapType,
   GameMode,
+  GameVariant,
   GameType,
   UnitType,
 } from "../core/game/Game";
@@ -653,6 +654,7 @@ export class SinglePlayerModal extends BaseModal {
                 : GameMapSize.Normal,
               gameType: GameType.Singleplayer,
               gameMode: this.gameMode,
+              gameVariant: GameVariant.Normal,
               playerTeams: this.teamCount,
               difficulty: this.selectedDifficulty,
               maxTimerValue: finalMaxTimerValue,

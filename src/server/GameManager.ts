@@ -6,6 +6,7 @@ import {
   GameMapSize,
   GameMapType,
   GameMode,
+  GameVariant,
   GameType,
 } from "../core/game/Game";
 import { GameConfig, GameID, PublicGameType } from "../core/Schemas";
@@ -79,6 +80,7 @@ export class GameManager {
         instantBuild: false,
         randomSpawn: false,
         gameMode: GameMode.FFA,
+        gameVariant: GameVariant.Normal,
         bots: 400,
         disabledUnits: [],
         ...gameConfig,

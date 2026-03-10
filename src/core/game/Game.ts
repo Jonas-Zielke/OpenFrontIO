@@ -224,6 +224,11 @@ export enum GameMode {
   Team = "Team",
 }
 
+export enum GameVariant {
+  Normal = "normal",
+  Fast = "fast",
+}
+
 export enum RankedType {
   OneVOne = "1v1",
 }

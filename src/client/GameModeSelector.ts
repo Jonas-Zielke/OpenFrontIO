@@ -4,6 +4,7 @@ import {
   Duos,
   GameMapType,
   GameMode,
+  GameVariant,
   HumansVsNations,
   Quads,
   Trios,
@@ -113,11 +114,9 @@ export class GameModeSelector extends LitElement {
 
   private renderSpecialLobbyCard(lobby: PublicGameInfo) {
     const subtitle = this.getLobbyTitle(lobby);
-    const isX4Mode =
-      lobby.gameConfig?.goldMultiplier === 4 &&
-      lobby.gameConfig?.troopMultiplier === 4;
-    const mainTitle = isX4Mode
-      ? "X4 RESOURCES"
+    const isFastMode = this.isFastModeLobby(lobby);
+    const mainTitle = isFastMode
+      ? "FAST MODE"
       : translateText("mode_selector.special_title");
     const titleContent = subtitle
       ? html`
@@ -217,11 +216,8 @@ export class GameModeSelector extends LitElement {
     const modifierLabels = getModifierLabels(
       lobby.gameConfig?.publicGameModifiers,
     );
-    if (
-      lobby.gameConfig?.goldMultiplier === 4 &&
-      lobby.gameConfig?.troopMultiplier === 4
-    ) {
-      modifierLabels.push("4X GOLD + TROOPS");
+    if (this.isFastModeLobby(lobby)) {
+      modifierLabels.push("FAST MODE");
     }
     // Sort by length for visual consistency (shorter labels first)
     if (modifierLabels.length > 1) {
@@ -287,6 +283,14 @@ export class GameModeSelector extends LitElement {
         </div>
       </button>
     `;
+  }
+
+  private isFastModeLobby(lobby: PublicGameInfo): boolean {
+    return (
+      lobby.gameConfig?.gameVariant === GameVariant.Fast ||
+      (lobby.gameConfig?.goldMultiplier === 4 &&
+        lobby.gameConfig?.troopMultiplier === 4)
+    );
   }
 
   private validateAndJoin(lobby: PublicGameInfo) {

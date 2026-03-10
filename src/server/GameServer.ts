@@ -145,6 +145,9 @@ export class GameServer {
     if (gameConfig.gameMode !== undefined) {
       this.gameConfig.gameMode = gameConfig.gameMode;
     }
+    if (gameConfig.gameVariant !== undefined) {
+      this.gameConfig.gameVariant = gameConfig.gameVariant;
+    }
     if (gameConfig.disabledUnits !== undefined) {
       this.gameConfig.disabledUnits = gameConfig.disabledUnits;
     }

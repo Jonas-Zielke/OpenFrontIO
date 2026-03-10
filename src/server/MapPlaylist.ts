@@ -5,6 +5,7 @@ import {
   GameMapSize,
   GameMapType,
   GameMode,
+  GameVariant,
   GameType,
   HumansVsNations,
   PublicGameModifiers,
@@ -199,6 +200,7 @@ export class MapPlaylist {
       maxTimerValue: undefined,
       instantBuild: false,
       randomSpawn: isRandomSpawn,
+      gameVariant: GameVariant.Normal,
       nations:
         mode === GameMode.Team && playerTeams !== HumansVsNations
           ? "disabled"
@@ -323,8 +325,7 @@ export class MapPlaylist {
       maxTimerValue: undefined,
       instantBuild: false,
       randomSpawn: isRandomSpawn,
-      goldMultiplier: 4,
-      troopMultiplier: 4,
+      gameVariant: GameVariant.Fast,
       nations,
       gameMode: mode,
       playerTeams,
@@ -360,6 +361,7 @@ export class MapPlaylist {
       maxTimerValue: isCompact ? 10 : 15,
       instantBuild: false,
       randomSpawn: false,
+      gameVariant: GameVariant.Normal,
       nations: "disabled",
       gameMode: GameMode.FFA,
       bots: isCompact ? 100 : 400,

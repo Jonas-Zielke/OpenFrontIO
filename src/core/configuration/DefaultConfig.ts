@@ -4,6 +4,7 @@ import {
   Difficulty,
   Game,
   GameMode,
+  GameVariant,
   GameType,
   Gold,
   Player,
@@ -255,11 +256,17 @@ export class DefaultConfig implements Config {
   donateTroops(): boolean {
     return this._gameConfig.donateTroops;
   }
+  private gameVariant(): GameVariant {
+    return this._gameConfig.gameVariant ?? GameVariant.Normal;
+  }
+  private fastModeMultiplier(): number {
+    return this.gameVariant() === GameVariant.Fast ? 4 : 1;
+  }
   goldMultiplier(): number {
-    return this._gameConfig.goldMultiplier ?? 1;
+    return (this._gameConfig.goldMultiplier ?? 1) * this.fastModeMultiplier();
   }
   troopMultiplier(): number {
-    return this._gameConfig.troopMultiplier ?? 1;
+    return (this._gameConfig.troopMultiplier ?? 1) * this.fastModeMultiplier();
   }
   startingGold(playerInfo: PlayerInfo): Gold {
     if (playerInfo.playerType === PlayerType.Bot) {
@@ -268,10 +275,30 @@ export class DefaultConfig implements Config {
     return BigInt(this._gameConfig.startingGold ?? 0);
   }
 
-  trainSpawnRate(numPlayerFactories: number): number {
+  trainFactoryStopGold(): Gold {
+    return this.gameVariant() === GameVariant.Fast ? 25_000n : 0n;
+  }
+  trainCityStopGold(cityLevel: number): Gold {
+    if (this.gameVariant() !== GameVariant.Fast) {
+      return 0n;
+    }
+    return BigInt(Math.max(0, cityLevel) * 30_000);
+  }
+  trainSpawnRate(player: Player): number {
+    const numPlayerFactories = player.unitCount(UnitType.Factory);
     // hyperbolic decay, midpoint at 10 factories
     // expected number of trains = numPlayerFactories  / trainSpawnRate(numPlayerFactories)
-    return (numPlayerFactories + 10) * 18;
+    const baseSpawnRate = (numPlayerFactories + 10) * 18;
+    if (this.gameVariant() !== GameVariant.Fast) {
+      return baseSpawnRate;
+    }
+
+    const numLocations =
+      numPlayerFactories +
+      player.unitCount(UnitType.City) +
+      player.unitCount(UnitType.Port);
+    const locationBoost = Math.max(1, Math.sqrt(Math.max(1, numLocations)));
+    return Math.max(12, Math.floor(baseSpawnRate / locationBoost));
   }
   trainGold(rel: "self" | "team" | "ally" | "other"): Gold {
     const multiplier = this.goldMultiplier();

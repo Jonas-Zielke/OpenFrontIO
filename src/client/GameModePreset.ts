@@ -1,13 +1,14 @@
-export type MenuGameModePreset = "normal" | "fast";
+import { GameVariant } from "../core/game/Game";
+
+export type MenuGameModePreset = GameVariant;
 
 const STORAGE_KEY = "menu_game_mode_preset";
 
 export function loadMenuGameModePreset(): MenuGameModePreset {
   const stored = localStorage.getItem(STORAGE_KEY);
-  return stored === "fast" ? "fast" : "normal";
+  return stored === GameVariant.Fast ? GameVariant.Fast : GameVariant.Normal;
 }
 
 export function saveMenuGameModePreset(preset: MenuGameModePreset): void {
   localStorage.setItem(STORAGE_KEY, preset);
 }
-

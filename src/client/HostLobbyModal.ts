@@ -9,6 +9,7 @@ import {
   GameMapSize,
   GameMapType,
   GameMode,
+  GameVariant,
   UnitType,
 } from "../core/game/Game";
 import {
@@ -116,18 +117,7 @@ export class HostLobbyModal extends BaseModal {
   }
 
   private applyPresetOptions(): void {
-    if (this.modePreset === "fast") {
-      this.goldMultiplier = true;
-      this.goldMultiplierValue = 4;
-      this.troopMultiplier = true;
-      this.troopMultiplierValue = 4;
-      return;
-    }
-
-    this.goldMultiplier = false;
-    this.goldMultiplierValue = undefined;
-    this.troopMultiplier = false;
-    this.troopMultiplierValue = undefined;
+    // Fast mode now lives in GameConfig and is no longer a UI-only multiplier preset.
   }
 
   private getRandomString(): string {
@@ -278,14 +268,14 @@ export class HostLobbyModal extends BaseModal {
               Mode Preset
             </span>
             <button
-              @click=${() => this.setModePreset("normal")}
-              class=${modePresetButtonClass("normal")}
+              @click=${() => this.setModePreset(GameVariant.Normal)}
+              class=${modePresetButtonClass(GameVariant.Normal)}
             >
               Normal
             </button>
             <button
-              @click=${() => this.setModePreset("fast")}
-              class=${modePresetButtonClass("fast")}
+              @click=${() => this.setModePreset(GameVariant.Fast)}
+              class=${modePresetButtonClass(GameVariant.Fast)}
             >
               Fast X4
             </button>
@@ -829,6 +819,7 @@ export class HostLobbyModal extends BaseModal {
             instantBuild: this.instantBuild,
             randomSpawn: this.randomSpawn,
             gameMode: this.gameMode,
+            gameVariant: this.modePreset,
             disabledUnits: this.disabledUnits,
             spawnImmunityDuration: this.spawnImmunity
               ? spawnImmunityTicks
