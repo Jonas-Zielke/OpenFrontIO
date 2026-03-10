@@ -4,8 +4,10 @@ import { TrainType, UnitType } from "../../core/game/Game";
 import { UnitView } from "../../core/game/GameView";
 import atomBombSprite from "/sprites/atombomb.png?url";
 import hydrogenBombSprite from "/sprites/hydrogenbomb.png?url";
+import frigateSprite from "/sprites/frigate.svg?url";
 import mirvSprite from "/sprites/mirv2.png?url";
 import samMissileSprite from "/sprites/samMissile.png?url";
+import sonarBuoySprite from "/sprites/sonarbuoy.svg?url";
 import tradeShipSprite from "/sprites/tradeship.png?url";
 import trainCarriageSprite from "/sprites/trainCarriage.png?url";
 import trainLoadedCarriageSprite from "/sprites/trainCarriageLoaded.png?url";
@@ -25,8 +27,10 @@ type TrainTypeSprite = (typeof TrainTypeSprite)[keyof typeof TrainTypeSprite];
 const SPRITE_CONFIG: Partial<Record<UnitType | TrainTypeSprite, string>> = {
   [UnitType.TransportShip]: transportShipSprite,
   [UnitType.Warship]: warshipSprite,
+  [UnitType.Frigate]: frigateSprite,
   [UnitType.Submarine]: transportShipSprite,
   [UnitType.NuclearSubmarine]: warshipSprite,
+  [UnitType.SonarBuoy]: sonarBuoySprite,
   [UnitType.SAMMissile]: samMissileSprite,
   [UnitType.AtomBomb]: atomBombSprite,
   [UnitType.HydrogenBomb]: hydrogenBombSprite,

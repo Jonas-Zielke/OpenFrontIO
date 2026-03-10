@@ -28,6 +28,7 @@ import {
 } from "../../Utils";
 import { getFirstPlacePlayer, getPlayerIcons } from "../PlayerIcons";
 import { TransformHandler } from "../TransformHandler";
+import { isUnitVisible } from "../UnitVisibility";
 import { ImmunityBarVisibleEvent } from "./ImmunityTimer";
 import { Layer } from "./Layer";
 import { CloseRadialMenuEvent } from "./RadialMenu";
@@ -64,7 +65,6 @@ function distSortUnitWorld(coord: { x: number; y: number }, game: GameView) {
 
 @customElement("player-info-overlay")
 export class PlayerInfoOverlay extends LitElement implements Layer {
-  private readonly SUBMARINE_DETECTION_RANGE = 40;
   @property({ type: Object })
   public game!: GameView;
 
@@ -154,13 +154,14 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
       const units = this.game
         .units(
           UnitType.Warship,
+          UnitType.Frigate,
           UnitType.TradeShip,
           UnitType.TransportShip,
           ...Submarines.types,
         )
         .filter(
           (u) =>
-            (!Submarines.has(u.type()) || this.canSeeSubmarine(u)) &&
+            isUnitVisible(this.game, u) &&
             euclideanDistWorld(worldCoord, u.tile(), this.game) < 50,
         )
         .sort(distSortUnitWorld(worldCoord, this.game));
@@ -170,28 +171,6 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
         this.setVisible(true);
       }
     }
-  }
-
-  private canSeeSubmarine(unit: UnitView): boolean {
-    if (!Submarines.has(unit.type())) {
-      return true;
-    }
-    const myPlayer = this.game.myPlayer();
-    if (myPlayer === null) {
-      return false;
-    }
-    if (unit.owner() === myPlayer || myPlayer.isFriendly(unit.owner())) {
-      return true;
-    }
-    const detectionRangeSquared = this.SUBMARINE_DETECTION_RANGE ** 2;
-    return this.game.units(...Submarines.types).some((mySubmarine) => {
-      return (
-        mySubmarine.owner() === myPlayer &&
-        mySubmarine.isActive() &&
-        this.game.euclideanDistSquared(mySubmarine.tile(), unit.tile()) <=
-          detectionRangeSquared
-      );
-    });
   }
 
   tick() {

@@ -375,6 +375,15 @@ export class DefaultConfig implements Config {
           maxHealth: 1000,
         };
         break;
+      case UnitType.Frigate:
+        info = {
+          cost: this.costWrapper(
+            (numUnits: number) => Math.min(2_000_000, (numUnits + 1) * 450_000),
+            UnitType.Frigate,
+          ),
+          maxHealth: 1200,
+        };
+        break;
       case UnitType.Submarine:
         info = {
           cost: this.costWrapper(() => 300_000, UnitType.Submarine),
@@ -385,6 +394,12 @@ export class DefaultConfig implements Config {
         info = {
           cost: this.costWrapper(() => 750_000, UnitType.NuclearSubmarine),
           maxHealth: 1100,
+        };
+        break;
+      case UnitType.SonarBuoy:
+        info = {
+          cost: () => 0n,
+          maxHealth: 200,
         };
         break;
       case UnitType.Shell:
@@ -476,6 +491,36 @@ export class DefaultConfig implements Config {
           ),
           constructionDuration: this.instantBuild() ? 0 : 30 * 10,
           upgradable: true,
+        };
+        break;
+      case UnitType.SmallRadar:
+        info = {
+          cost: this.costWrapper(
+            (numUnits: number) =>
+              Math.min(500_000, (numUnits + 1) * 60_000),
+            UnitType.SmallRadar,
+          ),
+          constructionDuration: this.instantBuild() ? 0 : 2 * 10,
+        };
+        break;
+      case UnitType.MediumRadar:
+        info = {
+          cost: this.costWrapper(
+            (numUnits: number) =>
+              Math.min(1_000_000, (numUnits + 1) * 150_000),
+            UnitType.MediumRadar,
+          ),
+          constructionDuration: this.instantBuild() ? 0 : 4 * 10,
+        };
+        break;
+      case UnitType.LargeRadar:
+        info = {
+          cost: this.costWrapper(
+            (numUnits: number) =>
+              Math.min(2_000_000, (numUnits + 1) * 350_000),
+            UnitType.LargeRadar,
+          ),
+          constructionDuration: this.instantBuild() ? 0 : 7 * 10,
         };
         break;
       case UnitType.City:
@@ -971,6 +1016,42 @@ export class DefaultConfig implements Config {
 
   defensePostTargettingRange(): number {
     return 75;
+  }
+
+  smallRadarRange(): number {
+    return 60;
+  }
+
+  mediumRadarRange(): number {
+    return 120;
+  }
+
+  largeRadarRange(): number {
+    return 190;
+  }
+
+  frigateRadarRange(): number {
+    return this.mediumRadarRange();
+  }
+
+  frigateMissileInterceptRange(): number {
+    return this.mediumRadarRange();
+  }
+
+  frigateSonarRange(): number {
+    return 70;
+  }
+
+  sonarBuoyRange(): number {
+    return 55;
+  }
+
+  frigateSonarDeployCooldown(): number {
+    return 18 * 10;
+  }
+
+  frigateMaxSonarBuoys(): number {
+    return 3;
   }
 
   allianceExtensionPromptOffset(): number {

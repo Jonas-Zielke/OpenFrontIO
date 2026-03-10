@@ -10,8 +10,12 @@ import { TransformHandler } from "../TransformHandler";
 import anchorIcon from "/images/AnchorIcon.png?url";
 import cityIcon from "/images/CityIcon.png?url";
 import factoryIcon from "/images/FactoryUnit.png?url";
+import frigateIcon from "/images/FrigateIconWhite.svg?url";
+import largeRadarIcon from "/images/LargeRadarIconWhite.svg?url";
+import mediumRadarIcon from "/images/MediumRadarIconWhite.svg?url";
 import missileSiloIcon from "/images/MissileSiloUnit.png?url";
 import SAMMissileIcon from "/images/SamLauncherUnit.png?url";
+import smallRadarIcon from "/images/SmallRadarIconWhite.svg?url";
 import shieldIcon from "/images/ShieldIcon.png?url";
 
 export const STRUCTURE_SHAPES: Partial<Record<UnitType, ShapeType>> = {
@@ -21,10 +25,15 @@ export const STRUCTURE_SHAPES: Partial<Record<UnitType, ShapeType>> = {
   [UnitType.DefensePost]: "octagon",
   [UnitType.SAMLauncher]: "square",
   [UnitType.LongRangeSAMLauncher]: "square",
+  [UnitType.SmallRadar]: "square",
+  [UnitType.MediumRadar]: "square",
+  [UnitType.LargeRadar]: "square",
   [UnitType.MissileSilo]: "triangle",
   [UnitType.Warship]: "cross",
+  [UnitType.Frigate]: "cross",
   [UnitType.Submarine]: "cross",
   [UnitType.NuclearSubmarine]: "cross",
+  [UnitType.SonarBuoy]: "cross",
   [UnitType.AtomBomb]: "cross",
   [UnitType.HydrogenBomb]: "cross",
   [UnitType.MIRV]: "cross",
@@ -70,6 +79,10 @@ export class SpriteFactory {
     [UnitType.MissileSilo, { iconPath: missileSiloIcon, image: null }],
     [UnitType.SAMLauncher, { iconPath: SAMMissileIcon, image: null }],
     [UnitType.LongRangeSAMLauncher, { iconPath: SAMMissileIcon, image: null }],
+    [UnitType.SmallRadar, { iconPath: smallRadarIcon, image: null }],
+    [UnitType.MediumRadar, { iconPath: mediumRadarIcon, image: null }],
+    [UnitType.LargeRadar, { iconPath: largeRadarIcon, image: null }],
+    [UnitType.Frigate, { iconPath: frigateIcon, image: null }],
   ]);
   constructor(
     theme: Theme,
@@ -474,6 +487,15 @@ export class SpriteFactory {
         break;
       case UnitType.LongRangeSAMLauncher:
         radius = this.game.config().longRangeSamRange(level ?? 1);
+        break;
+      case UnitType.SmallRadar:
+        radius = this.game.config().smallRadarRange();
+        break;
+      case UnitType.MediumRadar:
+        radius = this.game.config().mediumRadarRange();
+        break;
+      case UnitType.LargeRadar:
+        radius = this.game.config().largeRadarRange();
         break;
       case UnitType.Factory:
         radius = this.game.config().trainStationMaxRange();

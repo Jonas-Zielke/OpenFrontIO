@@ -19,13 +19,17 @@ import { Layer } from "./Layer";
 import warshipIcon from "/images/BattleshipIconWhite.svg?url";
 import cityIcon from "/images/CityIconWhite.svg?url";
 import factoryIcon from "/images/FactoryIconWhite.svg?url";
+import frigateIcon from "/images/FrigateIconWhite.svg?url";
 import goldCoinIcon from "/images/GoldCoinIcon.svg?url";
+import largeRadarIcon from "/images/LargeRadarIconWhite.svg?url";
+import mediumRadarIcon from "/images/MediumRadarIconWhite.svg?url";
 import mirvIcon from "/images/MIRVIcon.svg?url";
 import missileSiloIcon from "/images/MissileSiloIconWhite.svg?url";
 import hydrogenBombIcon from "/images/MushroomCloudIconWhite.svg?url";
 import atomBombIcon from "/images/NukeIconWhite.svg?url";
 import portIcon from "/images/PortIcon.svg?url";
 import samLauncherIcon from "/images/SamLauncherIconWhite.svg?url";
+import smallRadarIcon from "/images/SmallRadarIconWhite.svg?url";
 import defensePostIcon from "/images/ShieldIconWhite.svg?url";
 import boatIcon from "/images/BoatIconWhite.svg?url";
 
@@ -38,12 +42,16 @@ export class UnitDisplay extends LitElement implements Layer {
   private keybinds: Record<string, { value: string; key: string }> = {};
   private _cities = 0;
   private _warships = 0;
+  private _frigates = 0;
   private _factories = 0;
   private _missileSilo = 0;
   private _port = 0;
   private _submarines = 0;
   private _nuclearSubmarines = 0;
   private _defensePost = 0;
+  private _smallRadars = 0;
+  private _mediumRadars = 0;
+  private _largeRadars = 0;
   private _samLauncher = 0;
   private allDisabled = false;
   private _hoveredUnit: PlayerBuildableUnitType | null = null;
@@ -94,6 +102,7 @@ export class UnitDisplay extends LitElement implements Layer {
           (player?.units(UnitType.MissileSilo).length ?? 0) > 0
         );
       case UnitType.Warship:
+      case UnitType.Frigate:
       case UnitType.Submarine:
       case UnitType.NuclearSubmarine:
         return (
@@ -117,11 +126,15 @@ export class UnitDisplay extends LitElement implements Layer {
     this._submarines = player.totalUnitLevels(UnitType.Submarine);
     this._nuclearSubmarines = player.totalUnitLevels(UnitType.NuclearSubmarine);
     this._defensePost = player.totalUnitLevels(UnitType.DefensePost);
+    this._smallRadars = player.totalUnitLevels(UnitType.SmallRadar);
+    this._mediumRadars = player.totalUnitLevels(UnitType.MediumRadar);
+    this._largeRadars = player.totalUnitLevels(UnitType.LargeRadar);
     this._samLauncher =
       player.totalUnitLevels(UnitType.SAMLauncher) +
       player.totalUnitLevels(UnitType.LongRangeSAMLauncher);
     this._factories = player.totalUnitLevels(UnitType.Factory);
     this._warships = player.totalUnitLevels(UnitType.Warship);
+    this._frigates = player.totalUnitLevels(UnitType.Frigate);
     this.requestUpdate();
   }
 
@@ -181,6 +194,27 @@ export class UnitDisplay extends LitElement implements Layer {
               this.keybinds["buildMissileSilo"]?.key ?? "5",
             )}
             ${this.renderUnitItem(
+              smallRadarIcon,
+              this._smallRadars,
+              UnitType.SmallRadar,
+              "small_radar",
+              "",
+            )}
+            ${this.renderUnitItem(
+              mediumRadarIcon,
+              this._mediumRadars,
+              UnitType.MediumRadar,
+              "medium_radar",
+              "",
+            )}
+            ${this.renderUnitItem(
+              largeRadarIcon,
+              this._largeRadars,
+              UnitType.LargeRadar,
+              "large_radar",
+              "",
+            )}
+            ${this.renderUnitItem(
               samLauncherIcon,
               this._samLauncher,
               UnitType.SAMLauncher,
@@ -197,6 +231,13 @@ export class UnitDisplay extends LitElement implements Layer {
               UnitType.Warship,
               "warship",
               this.keybinds["buildWarship"]?.key ?? "7",
+            )}
+            ${this.renderUnitItem(
+              frigateIcon,
+              this._frigates,
+              UnitType.Frigate,
+              "frigate",
+              "",
             )}
             ${this.renderUnitItem(
               boatIcon,
@@ -321,6 +362,7 @@ export class UnitDisplay extends LitElement implements Layer {
                 );
                 break;
               case UnitType.Warship:
+              case UnitType.Frigate:
               case UnitType.Submarine:
               case UnitType.NuclearSubmarine:
                 this.eventBus?.emit(new ToggleStructureEvent([UnitType.Port]));

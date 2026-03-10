@@ -22,6 +22,10 @@ import {
   isSpriteReady,
   loadAllSprites,
 } from "../SpriteLoader";
+import {
+  isUnitVisible,
+  visibilitySensitiveUnitIds,
+} from "../UnitVisibility";
 
 enum Relationship {
   Self,
@@ -50,8 +54,6 @@ export class UnitLayer implements Layer {
 
   // Configuration for naval unit selection
   private readonly NAVAL_SELECTION_RADIUS = 10;
-  // Enemy submarines are only visible when one of your submarines is nearby.
-  private readonly SUBMARINE_DETECTION_RANGE = 40;
 
   constructor(
     private game: GameView,
@@ -71,9 +73,7 @@ export class UnitLayer implements Layer {
       this.game
         .updatesSinceLastTick()
         ?.[GameUpdateType.Unit]?.map((unit) => unit.id) ?? [];
-    const visibilityUnitIds = this.game
-      .units(...Submarines.types)
-      .map((unit) => unit.id());
+    const visibilityUnitIds = visibilitySensitiveUnitIds(this.game);
 
     const motionPlanUnitIds = this.game.motionPlannedUnitIds();
 
@@ -104,7 +104,7 @@ export class UnitLayer implements Layer {
    */
   private findNavalUnitsNearCell(clickRef: TileRef): UnitView[] {
     // Only select naval units owned by the player.
-    const navalTypes = [UnitType.Warship, ...Submarines.types] as const;
+    const navalTypes = [UnitType.Warship, UnitType.Frigate, ...Submarines.types] as const;
     return this.game
       .units(...navalTypes)
       .filter(
@@ -305,28 +305,6 @@ export class UnitLayer implements Layer {
     unitViews.forEach((unitView) => this.onUnitEvent(unitView));
   }
 
-  private isEnemySubmarineHidden(unit: UnitView): boolean {
-    if (!Submarines.has(unit.type())) {
-      return false;
-    }
-    const myPlayer = this.game.myPlayer();
-    if (myPlayer === null) {
-      return false;
-    }
-    if (unit.owner() === myPlayer || myPlayer.isFriendly(unit.owner())) {
-      return false;
-    }
-    const detectionRangeSquared = this.SUBMARINE_DETECTION_RANGE ** 2;
-    return !this.game.units(...Submarines.types).some((mySubmarine) => {
-      return (
-        mySubmarine.isActive() &&
-        mySubmarine.owner() === myPlayer &&
-        this.game.euclideanDistSquared(mySubmarine.tile(), unit.tile()) <=
-          detectionRangeSquared
-      );
-    });
-  }
-
   private clearSpriteAt(unit: UnitView) {
     if (!isSpriteReady(unit)) {
       return;
@@ -361,7 +339,7 @@ export class UnitLayer implements Layer {
   }
 
   onUnitEvent(unit: UnitView) {
-    if (this.isEnemySubmarineHidden(unit)) {
+    if (!isUnitVisible(this.game, unit)) {
       this.clearSpriteAt(unit);
       this.clearTrail(unit);
       return;
@@ -377,8 +355,10 @@ export class UnitLayer implements Layer {
         this.handleBoatEvent(unit);
         break;
       case UnitType.Warship:
+      case UnitType.Frigate:
       case UnitType.Submarine:
       case UnitType.NuclearSubmarine:
+      case UnitType.SonarBuoy:
         this.handleNavalUnitEvent(unit);
         break;
       case UnitType.Shell:

@@ -12,7 +12,7 @@ import { TileRef } from "../game/GameMap";
 import { PseudoRandom } from "../PseudoRandom";
 import { SAMMissileExecution } from "./SAMMissileExecution";
 
-type Target = {
+export type Target = {
   unit: Unit;
   tile: TileRef;
 };
@@ -24,7 +24,14 @@ type InterceptionTile = {
 
 type SAMLauncherType = (typeof SAMLaunchers.types)[number];
 
-function samRangeForUnit(mg: Game, sam: Unit): number {
+export function samRangeForUnit(
+  mg: Game,
+  sam: Unit,
+  overrideRange?: number,
+): number {
+  if (overrideRange !== undefined) {
+    return overrideRange;
+  }
   return sam.type() === UnitType.LongRangeSAMLauncher
     ? mg.config().longRangeSamRange(sam.level())
     : mg.config().samRange(sam.level());
@@ -33,7 +40,7 @@ function samRangeForUnit(mg: Game, sam: Unit): number {
 /**
  * Smart SAM targeting system preshoting nukes so its range is strictly enforced
  */
-class SAMTargetingSystem {
+export class SAMTargetingSystem {
   // Interception tiles are computed a single time, but it may not be reachable yet.
   // Store the result so it can be intercepted at the proper time, rather than recomputing each tick.
   // Null interception tile means there are no interception tiles in range. Store it to avoid recomputing.
@@ -44,6 +51,7 @@ class SAMTargetingSystem {
   constructor(
     private readonly mg: Game,
     private readonly sam: Unit,
+    private readonly interceptionRange?: number,
   ) {
     this.missileSpeed = this.mg.config().defaultSamMissileSpeed();
   }
@@ -115,7 +123,7 @@ class SAMTargetingSystem {
 
   public getSingleTarget(ticks: number): Target | null {
     const samTile = this.sam.tile();
-    const range = samRangeForUnit(this.mg, this.sam);
+    const range = samRangeForUnit(this.mg, this.sam, this.interceptionRange);
     const rangeSquared = range * range;
 
     // Look beyond the SAM range so it can preshot nukes

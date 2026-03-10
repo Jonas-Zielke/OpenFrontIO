@@ -86,7 +86,7 @@ export class WarshipExecution implements Execution {
     const ships = mg.nearbyUnits(
       this.warship.tile()!,
       config.warshipTargettingRange(),
-      [UnitType.TransportShip, UnitType.Warship, UnitType.TradeShip],
+      [UnitType.TransportShip, UnitType.Warship, UnitType.Frigate, UnitType.TradeShip],
     );
 
     let bestUnit: Unit | undefined = undefined;
@@ -123,7 +123,11 @@ export class WarshipExecution implements Execution {
       }
 
       const typePriority =
-        type === UnitType.TransportShip ? 0 : type === UnitType.Warship ? 1 : 2;
+        type === UnitType.TransportShip
+          ? 0
+          : type === UnitType.Warship || type === UnitType.Frigate
+            ? 1
+            : 2;
 
       if (bestUnit === undefined) {
         bestUnit = unit;

@@ -1,6 +1,6 @@
 import { Theme } from "../../../core/configuration/Config";
 import { EventBus } from "../../../core/EventBus";
-import { UnitType } from "../../../core/game/Game";
+import { Submarines, UnitType } from "../../../core/game/Game";
 import { TileRef } from "../../../core/game/GameMap";
 import { ConquestUpdate, GameUpdateType } from "../../../core/game/GameUpdates";
 import { GameView, UnitView } from "../../../core/game/GameView";
@@ -12,6 +12,7 @@ import { nukeFxFactory, ShockwaveFx } from "../fx/NukeFx";
 import { SpriteFx } from "../fx/SpriteFx";
 import { UnitExplosionFx } from "../fx/UnitExplosionFx";
 import { TransformHandler } from "../TransformHandler";
+import { isUnitVisible } from "../UnitVisibility";
 import { Layer } from "./Layer";
 import { RailTileChangedEvent } from "./RailroadLayer";
 export class FxLayer implements Layer {
@@ -59,6 +60,12 @@ export class FxLayer implements Layer {
   }
 
   onUnitEvent(unit: UnitView) {
+    if (
+      (Submarines.has(unit.type()) || unit.type() === UnitType.SonarBuoy) &&
+      !isUnitVisible(this.game, unit)
+    ) {
+      return;
+    }
     switch (unit.type()) {
       case UnitType.AtomBomb: {
         this.onNukeEvent(unit, 70);
@@ -72,6 +79,7 @@ export class FxLayer implements Layer {
         break;
       }
       case UnitType.Warship:
+      case UnitType.Frigate:
       case UnitType.Submarine:
       case UnitType.NuclearSubmarine:
         this.onWarshipEvent(unit);
@@ -88,6 +96,9 @@ export class FxLayer implements Layer {
       case UnitType.MissileSilo:
       case UnitType.SAMLauncher:
       case UnitType.LongRangeSAMLauncher:
+      case UnitType.SmallRadar:
+      case UnitType.MediumRadar:
+      case UnitType.LargeRadar:
       case UnitType.Factory:
         this.onStructureEvent(unit);
         break;

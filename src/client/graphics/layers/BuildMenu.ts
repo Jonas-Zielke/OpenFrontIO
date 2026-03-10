@@ -28,13 +28,17 @@ import { Layer } from "./Layer";
 import warshipIcon from "/images/BattleshipIconWhite.svg?url";
 import cityIcon from "/images/CityIconWhite.svg?url";
 import factoryIcon from "/images/FactoryIconWhite.svg?url";
+import frigateIcon from "/images/FrigateIconWhite.svg?url";
 import goldCoinIcon from "/images/GoldCoinIcon.svg?url";
+import largeRadarIcon from "/images/LargeRadarIconWhite.svg?url";
+import mediumRadarIcon from "/images/MediumRadarIconWhite.svg?url";
 import mirvIcon from "/images/MIRVIcon.svg?url";
 import missileSiloIcon from "/images/MissileSiloIconWhite.svg?url";
 import hydrogenBombIcon from "/images/MushroomCloudIconWhite.svg?url";
 import atomBombIcon from "/images/NukeIconWhite.svg?url";
 import portIcon from "/images/PortIcon.svg?url";
 import samlauncherIcon from "/images/SamLauncherIconWhite.svg?url";
+import smallRadarIcon from "/images/SmallRadarIconWhite.svg?url";
 import shieldIcon from "/images/ShieldIconWhite.svg?url";
 
 export interface BuildItemDisplay {
@@ -76,6 +80,13 @@ export const buildTable: BuildItemDisplay[][] = [
       countable: true,
     },
     {
+      unitType: UnitType.Frigate,
+      icon: frigateIcon,
+      description: "build_menu.desc.frigate",
+      key: "unit_type.frigate",
+      countable: true,
+    },
+    {
       unitType: UnitType.Submarine,
       icon: warshipIcon,
       description: "build_menu.desc.submarine",
@@ -101,6 +112,27 @@ export const buildTable: BuildItemDisplay[][] = [
       icon: missileSiloIcon,
       description: "build_menu.desc.missile_silo",
       key: "unit_type.missile_silo",
+      countable: true,
+    },
+    {
+      unitType: UnitType.SmallRadar,
+      icon: smallRadarIcon,
+      description: "build_menu.desc.small_radar",
+      key: "unit_type.small_radar",
+      countable: true,
+    },
+    {
+      unitType: UnitType.MediumRadar,
+      icon: mediumRadarIcon,
+      description: "build_menu.desc.medium_radar",
+      key: "unit_type.medium_radar",
+      countable: true,
+    },
+    {
+      unitType: UnitType.LargeRadar,
+      icon: largeRadarIcon,
+      description: "build_menu.desc.large_radar",
+      key: "unit_type.large_radar",
       countable: true,
     },
     {

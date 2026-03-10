@@ -8,6 +8,7 @@ import { UserSettings } from "../../../core/game/UserSettings";
 import { UnitSelectionEvent } from "../../InputHandler";
 import { ProgressBar } from "../ProgressBar";
 import { TransformHandler } from "../TransformHandler";
+import { isUnitVisible } from "../UnitVisibility";
 import { Layer } from "./Layer";
 
 const COLOR_PROGRESSION = [
@@ -52,6 +53,7 @@ export class UILayer implements Layer {
     return (
       unit !== null &&
       (unit.type() === UnitType.Warship ||
+        unit.type() === UnitType.Frigate ||
         unit.type() === UnitType.Submarine ||
         unit.type() === UnitType.NuclearSubmarine)
     );
@@ -112,6 +114,13 @@ export class UILayer implements Layer {
   }
 
   onUnitEvent(unit: UnitView) {
+    if (!isUnitVisible(this.game, unit)) {
+      this.allHealthBars.get(unit.id())?.clear();
+      this.allHealthBars.delete(unit.id());
+      this.allProgressBars.get(unit.id())?.progressBar.clear();
+      this.allProgressBars.delete(unit.id());
+      return;
+    }
     const underConst = unit.isUnderConstruction();
     if (underConst) {
       this.createLoadingBar(unit);
@@ -119,8 +128,10 @@ export class UILayer implements Layer {
     }
     switch (unit.type()) {
       case UnitType.Warship:
+      case UnitType.Frigate:
       case UnitType.Submarine:
       case UnitType.NuclearSubmarine:
+      case UnitType.SonarBuoy:
         this.drawHealthBar(unit);
         break;
       case UnitType.City:
@@ -130,6 +141,9 @@ export class UILayer implements Layer {
       case UnitType.MissileSilo:
       case UnitType.SAMLauncher:
       case UnitType.LongRangeSAMLauncher:
+      case UnitType.SmallRadar:
+      case UnitType.MediumRadar:
+      case UnitType.LargeRadar:
         if (
           unit.markedForDeletion() !== false ||
           unit.missileReadinesss() < 1
@@ -349,6 +363,9 @@ export class UILayer implements Layer {
       case UnitType.Factory:
       case UnitType.Port:
       case UnitType.DefensePost:
+      case UnitType.SmallRadar:
+      case UnitType.MediumRadar:
+      case UnitType.LargeRadar:
         return this.deletionProgress(this.game, unit);
       default:
         return 1;

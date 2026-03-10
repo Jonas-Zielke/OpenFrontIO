@@ -72,6 +72,7 @@ export class UnitImpl implements Unit {
 
     switch (this._type) {
       case UnitType.Warship:
+      case UnitType.Frigate:
       case UnitType.Submarine:
       case UnitType.NuclearSubmarine:
       case UnitType.Port:
@@ -79,6 +80,9 @@ export class UnitImpl implements Unit {
       case UnitType.DefensePost:
       case UnitType.SAMLauncher:
       case UnitType.LongRangeSAMLauncher:
+      case UnitType.SmallRadar:
+      case UnitType.MediumRadar:
+      case UnitType.LargeRadar:
       case UnitType.City:
       case UnitType.Factory:
         this.mg.stats().unitBuild(_owner, this._type);
@@ -193,6 +197,7 @@ export class UnitImpl implements Unit {
     this.clearPendingDeletion();
     switch (this._type) {
       case UnitType.Warship:
+      case UnitType.Frigate:
       case UnitType.Submarine:
       case UnitType.NuclearSubmarine:
       case UnitType.Port:
@@ -200,6 +205,9 @@ export class UnitImpl implements Unit {
       case UnitType.DefensePost:
       case UnitType.SAMLauncher:
       case UnitType.LongRangeSAMLauncher:
+      case UnitType.SmallRadar:
+      case UnitType.MediumRadar:
+      case UnitType.LargeRadar:
       case UnitType.City:
       case UnitType.Factory:
         this.mg.stats().unitCapture(newOwner, this._type);
@@ -296,7 +304,11 @@ export class UnitImpl implements Unit {
         case UnitType.Port:
         case UnitType.SAMLauncher:
         case UnitType.LongRangeSAMLauncher:
+        case UnitType.SmallRadar:
+        case UnitType.MediumRadar:
+        case UnitType.LargeRadar:
         case UnitType.Warship:
+        case UnitType.Frigate:
         case UnitType.Submarine:
         case UnitType.NuclearSubmarine:
         case UnitType.Factory:

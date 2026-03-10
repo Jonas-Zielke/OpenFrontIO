@@ -32,9 +32,13 @@ export const otherUnits = [
   "defp",
   "port",
   "wshp",
+  "frig",
   "silo",
   "saml",
   "saml4",
+  "rads",
+  "radm",
+  "radl",
   "fact",
   "subn",
   "subh",
@@ -49,6 +53,10 @@ export type OtherUnitType =
   | UnitType.SAMLauncher
   | UnitType.LongRangeSAMLauncher
   | UnitType.Warship
+  | UnitType.Frigate
+  | UnitType.SmallRadar
+  | UnitType.MediumRadar
+  | UnitType.LargeRadar
   | UnitType.Factory
   | UnitType.NuclearSubmarine
   | UnitType.Submarine;
@@ -61,6 +69,10 @@ export const unitTypeToOtherUnit = {
   [UnitType.SAMLauncher]: "saml",
   [UnitType.LongRangeSAMLauncher]: "saml4",
   [UnitType.Warship]: "wshp",
+  [UnitType.Frigate]: "frig",
+  [UnitType.SmallRadar]: "rads",
+  [UnitType.MediumRadar]: "radm",
+  [UnitType.LargeRadar]: "radl",
   [UnitType.Factory]: "fact",
   [UnitType.NuclearSubmarine]: "subn",
   [UnitType.Submarine]: "subh",

@@ -151,6 +151,15 @@ export interface Config {
   warshipTargettingRange(): number;
   defensePostShellAttackRate(): number;
   defensePostTargettingRange(): number;
+  smallRadarRange(): number;
+  mediumRadarRange(): number;
+  largeRadarRange(): number;
+  frigateRadarRange(): number;
+  frigateMissileInterceptRange(): number;
+  frigateSonarRange(): number;
+  sonarBuoyRange(): number;
+  frigateSonarDeployCooldown(): Tick;
+  frigateMaxSonarBuoys(): number;
   // 0-1
   traitorDefenseDebuff(): number;
   traitorDuration(): number;

@@ -269,8 +269,10 @@ function unitTypeGroup<T extends readonly UnitType[]>(types: T) {
 export enum UnitType {
   TransportShip = "Transport",
   Warship = "Warship",
+  Frigate = "Frigate",
   Submarine = "Submarine",
   NuclearSubmarine = "Nuclear Submarine",
+  SonarBuoy = "Sonar Buoy",
   Shell = "Shell",
   SAMMissile = "SAMMissile",
   Port = "Port",
@@ -281,6 +283,9 @@ export enum UnitType {
   DefensePost = "Defense Post",
   SAMLauncher = "SAM Launcher",
   LongRangeSAMLauncher = "Long Range SAM Launcher",
+  SmallRadar = "Small Radar",
+  MediumRadar = "Medium Radar",
+  LargeRadar = "Large Radar",
   City = "City",
   MIRV = "MIRV",
   MIRVWarhead = "MIRV Warhead",
@@ -306,6 +311,7 @@ export const BuildableAttacks = unitTypeGroup([
   UnitType.HydrogenBomb,
   UnitType.MIRV,
   UnitType.Warship,
+  UnitType.Frigate,
   UnitType.Submarine,
   UnitType.NuclearSubmarine,
 ] as const);
@@ -315,9 +321,18 @@ export const Structures = unitTypeGroup([
   UnitType.DefensePost,
   UnitType.SAMLauncher,
   UnitType.LongRangeSAMLauncher,
+  UnitType.SmallRadar,
+  UnitType.MediumRadar,
+  UnitType.LargeRadar,
   UnitType.MissileSilo,
   UnitType.Port,
   UnitType.Factory,
+] as const);
+
+export const RadarStations = unitTypeGroup([
+  UnitType.SmallRadar,
+  UnitType.MediumRadar,
+  UnitType.LargeRadar,
 ] as const);
 
 export const SAMLaunchers = unitTypeGroup([
@@ -332,6 +347,7 @@ export const Submarines = unitTypeGroup([
 
 export const NavalUnits = unitTypeGroup([
   UnitType.Warship,
+  UnitType.Frigate,
   ...Submarines.types,
 ] as const);
 
@@ -370,6 +386,10 @@ export interface UnitParamsMap {
     patrolTile: TileRef;
   };
 
+  [UnitType.Frigate]: {
+    patrolTile: TileRef;
+  };
+
   [UnitType.Submarine]: {
     patrolTile: TileRef;
   };
@@ -377,6 +397,8 @@ export interface UnitParamsMap {
   [UnitType.NuclearSubmarine]: {
     patrolTile: TileRef;
   };
+
+  [UnitType.SonarBuoy]: Record<string, never>;
 
   [UnitType.Shell]: Record<string, never>;
 
@@ -414,6 +436,12 @@ export interface UnitParamsMap {
   [UnitType.SAMLauncher]: Record<string, never>;
 
   [UnitType.LongRangeSAMLauncher]: Record<string, never>;
+
+  [UnitType.SmallRadar]: Record<string, never>;
+
+  [UnitType.MediumRadar]: Record<string, never>;
+
+  [UnitType.LargeRadar]: Record<string, never>;
 
   [UnitType.City]: Record<string, never>;
 

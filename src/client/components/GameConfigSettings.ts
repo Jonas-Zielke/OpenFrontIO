@@ -93,6 +93,7 @@ const unitOptions: { type: UnitType; translationKey: string }[] = [
   { type: UnitType.DefensePost, translationKey: "unit_type.defense_post" },
   { type: UnitType.Port, translationKey: "unit_type.port" },
   { type: UnitType.Warship, translationKey: "unit_type.warship" },
+  { type: UnitType.Frigate, translationKey: "unit_type.frigate" },
   { type: UnitType.Submarine, translationKey: "unit_type.submarine" },
   {
     type: UnitType.NuclearSubmarine,
@@ -100,6 +101,9 @@ const unitOptions: { type: UnitType; translationKey: string }[] = [
   },
   { type: UnitType.TransportShip, translationKey: "unit_type.boat" },
   { type: UnitType.MissileSilo, translationKey: "unit_type.missile_silo" },
+  { type: UnitType.SmallRadar, translationKey: "unit_type.small_radar" },
+  { type: UnitType.MediumRadar, translationKey: "unit_type.medium_radar" },
+  { type: UnitType.LargeRadar, translationKey: "unit_type.large_radar" },
   { type: UnitType.SAMLauncher, translationKey: "unit_type.sam_launcher" },
   {
     type: UnitType.LongRangeSAMLauncher,

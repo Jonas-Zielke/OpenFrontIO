@@ -9,6 +9,7 @@ import { NukeExecution } from "./NukeExecution";
 import { PortExecution } from "./PortExecution";
 import { SAMLauncherExecution } from "./SAMLauncherExecution";
 import { SubmarineExecution } from "./SubmarineExecution";
+import { FrigateExecution } from "./FrigateExecution";
 import { WarshipExecution } from "./WarshipExecution";
 
 export class ConstructionExecution implements Execution {
@@ -125,6 +126,11 @@ export class ConstructionExecution implements Execution {
           new WarshipExecution({ owner: player, patrolTile: this.tile }),
         );
         break;
+      case UnitType.Frigate:
+        this.mg.addExecution(
+          new FrigateExecution({ owner: player, patrolTile: this.tile }),
+        );
+        break;
       case UnitType.Submarine:
         this.mg.addExecution(
           new SubmarineExecution({
@@ -162,6 +168,10 @@ export class ConstructionExecution implements Execution {
           new SAMLauncherExecution(player, null, this.structure!),
         );
         break;
+      case UnitType.SmallRadar:
+      case UnitType.MediumRadar:
+      case UnitType.LargeRadar:
+        break;
       case UnitType.City:
         this.mg.addExecution(new CityExecution(this.structure!));
         break;
@@ -183,12 +193,16 @@ export class ConstructionExecution implements Execution {
       case UnitType.DefensePost:
       case UnitType.SAMLauncher:
       case UnitType.LongRangeSAMLauncher:
+      case UnitType.SmallRadar:
+      case UnitType.MediumRadar:
+      case UnitType.LargeRadar:
       case UnitType.City:
       case UnitType.Factory:
         return true;
       case UnitType.Submarine:
       case UnitType.NuclearSubmarine:
       case UnitType.Warship:
+      case UnitType.Frigate:
       case UnitType.AtomBomb:
       case UnitType.HydrogenBomb:
       case UnitType.MIRV:

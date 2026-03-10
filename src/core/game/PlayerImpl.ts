@@ -1151,6 +1151,7 @@ export class PlayerImpl implements Player {
       case UnitType.Port:
         return this.portSpawn(targetTile, validTiles);
       case UnitType.Warship:
+      case UnitType.Frigate:
       case UnitType.Submarine:
       case UnitType.NuclearSubmarine:
         return this.warshipSpawn(targetTile);
@@ -1163,10 +1164,15 @@ export class PlayerImpl implements Player {
         return this.tradeShipSpawn(targetTile);
       case UnitType.Train:
         return this.landBasedUnitSpawn(targetTile);
+      case UnitType.SonarBuoy:
+        return false;
       case UnitType.MissileSilo:
       case UnitType.DefensePost:
       case UnitType.SAMLauncher:
       case UnitType.LongRangeSAMLauncher:
+      case UnitType.SmallRadar:
+      case UnitType.MediumRadar:
+      case UnitType.LargeRadar:
       case UnitType.City:
       case UnitType.Factory:
         return this.landBasedStructureSpawn(targetTile, validTiles);

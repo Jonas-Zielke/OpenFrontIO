@@ -10,10 +10,13 @@ import { GameUpdateType } from "../../../core/game/GameUpdates";
 import { GameView, UnitView } from "../../../core/game/GameView";
 import cityIcon from "/images/buildings/cityAlt1.png?url";
 import factoryIcon from "/images/buildings/factoryAlt1.png?url";
+import largeRadarIcon from "/images/LargeRadarIconWhite.svg?url";
+import mediumRadarIcon from "/images/MediumRadarIconWhite.svg?url";
 import shieldIcon from "/images/buildings/fortAlt3.png?url";
 import anchorIcon from "/images/buildings/port1.png?url";
 import missileSiloIcon from "/images/buildings/silo1.png?url";
 import SAMMissileIcon from "/images/buildings/silo4.png?url";
+import smallRadarIcon from "/images/SmallRadarIconWhite.svg?url";
 
 const underConstructionColor = colord("rgb(150,150,150)");
 
@@ -71,6 +74,21 @@ export class StructureLayer implements Layer {
     },
     [UnitType.LongRangeSAMLauncher]: {
       icon: SAMMissileIcon,
+      borderRadius: BASE_BORDER_RADIUS * RADIUS_SCALE_FACTOR,
+      territoryRadius: BASE_TERRITORY_RADIUS * RADIUS_SCALE_FACTOR,
+    },
+    [UnitType.SmallRadar]: {
+      icon: smallRadarIcon,
+      borderRadius: BASE_BORDER_RADIUS * RADIUS_SCALE_FACTOR,
+      territoryRadius: BASE_TERRITORY_RADIUS * RADIUS_SCALE_FACTOR,
+    },
+    [UnitType.MediumRadar]: {
+      icon: mediumRadarIcon,
+      borderRadius: BASE_BORDER_RADIUS * RADIUS_SCALE_FACTOR,
+      territoryRadius: BASE_TERRITORY_RADIUS * RADIUS_SCALE_FACTOR,
+    },
+    [UnitType.LargeRadar]: {
+      icon: largeRadarIcon,
       borderRadius: BASE_BORDER_RADIUS * RADIUS_SCALE_FACTOR,
       territoryRadius: BASE_TERRITORY_RADIUS * RADIUS_SCALE_FACTOR,
     },
