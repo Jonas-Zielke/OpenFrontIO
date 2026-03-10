@@ -3,6 +3,7 @@ import crypto from "crypto";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import http from "http";
+import httpProxy from "http-proxy";
 import path from "path";
 import { fileURLToPath } from "url";
 import { GameEnv } from "../core/configuration/Config";
@@ -18,11 +19,70 @@ let lobbyService: MasterLobbyService;
 
 const app = express();
 const server = http.createServer(app);
+const workerProxy = httpProxy.createProxyServer({
+  ws: true,
+  xfwd: true,
+});
 
 const log = logger.child({ comp: "m" });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+function workerProxyTargetForUrl(url: string | undefined): string | null {
+  if (!url) {
+    return null;
+  }
+
+  const pathname = new URL(url, "http://127.0.0.1").pathname;
+  const match = pathname.match(/^\/w(\d+)(?:\/|$)/);
+  if (!match) {
+    return null;
+  }
+
+  const workerId = Number.parseInt(match[1], 10);
+  if (
+    !Number.isInteger(workerId) ||
+    workerId < 0 ||
+    workerId >= config.numWorkers()
+  ) {
+    return null;
+  }
+
+  return `http://127.0.0.1:${config.workerPortByIndex(workerId)}`;
+}
+
+workerProxy.on("error", (error, req, res) => {
+  log.error("worker proxy error", {
+    url: req.url,
+    method: req.method,
+    error,
+  });
+
+  if (res && "writeHead" in res && typeof res.writeHead === "function") {
+    if (!res.headersSent) {
+      res.writeHead(502, { "Content-Type": "application/json" });
+    }
+    res.end(JSON.stringify({ error: "Worker unavailable" }));
+    return;
+  }
+
+  if (res && "destroy" in res && typeof res.destroy === "function") {
+    res.destroy();
+  }
+});
+
+// In Render and similar single-service deployments only the master process is
+// externally reachable, so the master must proxy /wN/... requests to workers.
+app.use((req, res, next) => {
+  const target = workerProxyTargetForUrl(req.originalUrl ?? req.url);
+  if (target === null) {
+    next();
+    return;
+  }
+
+  workerProxy.web(req, res, { target });
+});
 
 app.use(express.json());
 
@@ -133,6 +193,17 @@ export async function startMaster() {
 
   const portFromEnv = Number.parseInt(process.env.PORT ?? "", 10);
   const PORT = Number.isFinite(portFromEnv) ? portFromEnv : 3000;
+
+  server.on("upgrade", (req, socket, head) => {
+    const target = workerProxyTargetForUrl(req.url);
+    if (target === null) {
+      socket.destroy();
+      return;
+    }
+
+    workerProxy.ws(req, socket, head, { target });
+  });
+
   server.listen(PORT, () => {
     log.info(`Master HTTP server listening on port ${PORT}`);
   });
