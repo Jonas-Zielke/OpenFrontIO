@@ -3,8 +3,8 @@ import { Theme } from "../../core/configuration/Config";
 import { TrainType, UnitType } from "../../core/game/Game";
 import { UnitView } from "../../core/game/GameView";
 import atomBombSprite from "/sprites/atombomb.png?url";
-import hydrogenBombSprite from "/sprites/hydrogenbomb.png?url";
 import frigateSprite from "/sprites/frigate.svg?url";
+import hydrogenBombSprite from "/sprites/hydrogenbomb.png?url";
 import mirvSprite from "/sprites/mirv2.png?url";
 import samMissileSprite from "/sprites/samMissile.png?url";
 import sonarBuoySprite from "/sprites/sonarbuoy.svg?url";
@@ -59,16 +59,25 @@ export const loadAllSprites = async (): Promise<void> => {
       }
 
       try {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.src = url;
+        let bitmap: ImageBitmap;
 
-        await new Promise<void>((resolve, reject) => {
-          img.onload = () => resolve();
-          img.onerror = (err) => reject(err);
-        });
+        if (url.endsWith(".svg")) {
+          // Handle SVG files by rendering them to a canvas first
+          bitmap = await loadSvgAsImageBitmap(url);
+        } else {
+          // Handle regular image files
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.src = url;
 
-        const bitmap = await createImageBitmap(img);
+          await new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = (err) => reject(err);
+          });
+
+          bitmap = await createImageBitmap(img);
+        }
+
         spriteMap.set(typedUnitType, bitmap);
         loadedCount++;
 
@@ -81,6 +90,51 @@ export const loadAllSprites = async (): Promise<void> => {
     }),
   );
 };
+
+/**
+ * Load an SVG file and convert it to an ImageBitmap
+ */
+async function loadSvgAsImageBitmap(svgUrl: string): Promise<ImageBitmap> {
+  const response = await fetch(svgUrl);
+  const svgData = await response.text();
+
+  // Get the viewBox dimensions from the SVG
+  const viewBoxMatch = svgData.match(/viewBox="([^"]+)"/);
+  const viewBox = viewBoxMatch
+    ? viewBoxMatch[1].split(" ").map(Number)
+    : [0, 0, 16, 16];
+  const width = viewBox[2];
+  const height = viewBox[3];
+
+  // Create a blob URL for the SVG
+  const blob = new Blob([svgData], { type: "image/svg+xml" });
+  const blobUrl = URL.createObjectURL(blob);
+
+  try {
+    // Create an image element and load the SVG
+    const img = new Image();
+    img.src = blobUrl;
+
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = (err) => reject(err);
+    });
+
+    // Create a canvas and draw the SVG onto it
+    const canvas = new OffscreenCanvas(width, height);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      throw new Error("Failed to get canvas context");
+    }
+
+    ctx.drawImage(img, 0, 0, width, height);
+
+    // Convert the canvas to an ImageBitmap
+    return canvas.convertToBlob().then((blob) => createImageBitmap(blob));
+  } finally {
+    URL.revokeObjectURL(blobUrl);
+  }
+}
 
 /**
  * The train sprites rely on the train attributes and not only on its type
